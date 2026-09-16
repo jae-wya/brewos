@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    @apply bg-roast-900 text-brew-50 font-body antialiased;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brew-500 hover:bg-brew-400 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-150 active:scale-95;
+  }
+  .btn-secondary {
+    @apply bg-roast-700 hover:bg-roast-600 text-brew-100 font-semibold px-4 py-2 rounded-lg transition-colors duration-150 active:scale-95;
+  }
+  .btn-danger {
+    @apply bg-red-700 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-150 active:scale-95;
+  }
+  .card {
+    @apply bg-roast-800 rounded-xl border border-roast-700 shadow-lg;
+  }
+  .badge-pending  { @apply bg-amber-500/20 text-amber-300 border border-amber-500/30; }
+  .badge-brewing  { @apply bg-blue-500/20 text-blue-300 border border-blue-500/30; }
+  .badge-ready    { @apply bg-green-500/20 text-green-300 border border-green-500/30; }
+  .badge-picked-up { @apply bg-roast-600/50 text-roast-300 border border-roast-600; }
+  .badge-cancelled { @apply bg-red-500/20 text-red-300 border border-red-500/30; }
+}
