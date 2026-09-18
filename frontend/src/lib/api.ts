@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 export const BUSINESS_ID = 'a0000000-0000-0000-0000-000000000001'
-export const API_BASE = 'https://brewos-api.onrender.com'
+export const API_BASE = 'http://127.0.0.1:8000'
 
 const api = axios.create({ baseURL: API_BASE })
 

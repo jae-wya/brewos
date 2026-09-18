@@ -3,24 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { menuApi, ordersApi, BUSINESS_ID } from '../lib/api'
 import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
-import { Plus, Minus, Trash2, ChevronLeft, ShoppingCart } from 'lucide-react'
-import clsx from 'clsx'
+import { Plus, Minus, Trash2, ChevronLeft, ShoppingCart, X } from 'lucide-react'
 
-// Item modal for selecting modifiers
-function ItemModal({
-  item,
-  menuData,
-  onAdd,
-  onClose,
-}: {
-  item: MenuItem
-  menuData: MenuData
-  onAdd: (cartItem: CartItem) => void
-  onClose: () => void
+function ItemModal({ item, menuData, onAdd, onClose }: {
+  item: MenuItem, menuData: MenuData,
+  onAdd: (cartItem: CartItem) => void, onClose: () => void
 }) {
   const itemModifierIds = item.menu_item_modifiers.map(m => m.modifier_id)
   const itemModifiers = menuData.modifiers.filter(m => itemModifierIds.includes(m.id))
-
   const [selectedOptions, setSelectedOptions] = useState<Record<string, ModifierOption>>({})
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
@@ -28,13 +18,7 @@ function ItemModal({
   const totalPrice = item.base_price +
     Object.values(selectedOptions).reduce((sum, opt) => sum + opt.price_delta, 0)
 
-  const handleSelect = (modifierId: string, option: ModifierOption) => {
-    setSelectedOptions(prev => ({ ...prev, [modifierId]: option }))
-  }
-
-  const canAdd = itemModifiers
-    .filter(m => m.is_required)
-    .every(m => selectedOptions[m.id])
+  const canAdd = itemModifiers.filter(m => m.is_required).every(m => selectedOptions[m.id])
 
   const handleAdd = () => {
     onAdd({
@@ -43,7 +27,7 @@ function ItemModal({
       unit_price: totalPrice,
       quantity,
       notes,
-      modifiers: Object.entries(selectedOptions).map(([, opt]) => ({
+      modifiers: Object.values(selectedOptions).map(opt => ({
         modifier_option_id: opt.id,
         option_name: opt.name,
         price_delta: opt.price_delta,
@@ -53,81 +37,88 @@ function ItemModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={onClose}>
-      <div
-        className="bg-roast-800 rounded-t-2xl w-full max-w-lg p-5 pb-16 max-h-[80vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
+      <div className="w-full max-w-lg rounded-t-2xl p-5 pb-10 max-h-[85vh] overflow-y-auto"
+        style={{ background: 'var(--surface)' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="font-display font-bold text-brew-100 text-lg">{item.name}</h3>
-            <p className="text-brew-400 font-semibold">₱{item.base_price}</p>
+            <h3 className="font-display text-xl" style={{ color: 'var(--text)' }}>{item.name}</h3>
+            <p className="font-mono font-bold mt-0.5" style={{ color: 'var(--accent)' }}>
+              ₱{totalPrice * quantity}
+            </p>
           </div>
-          <button onClick={onClose} className="text-roast-400 hover:text-brew-300 text-2xl leading-none">×</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}>
+            <X size={15} />
+          </button>
         </div>
 
+        {/* Modifiers */}
         {itemModifiers.map(modifier => (
           <div key={modifier.id} className="mb-4">
-            <p className="text-xs font-semibold text-roast-400 uppercase tracking-wider mb-2">
-              {modifier.name} {modifier.is_required && <span className="text-red-400">*</span>}
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2"
+              style={{ color: 'var(--text-faint)' }}>
+              {modifier.name}
+              {modifier.is_required && <span style={{ color: 'var(--danger)' }}> *</span>}
             </p>
             <div className="flex flex-wrap gap-2">
               {modifier.modifier_options.map(opt => (
                 <button
                   key={opt.id}
-                  onClick={() => handleSelect(modifier.id, opt)}
-                  className={clsx(
-                    'px-3 py-1.5 rounded-lg text-sm border transition-colors',
-                    selectedOptions[modifier.id]?.id === opt.id
-                      ? 'bg-brew-500 border-brew-400 text-white'
-                      : 'bg-roast-700 border-roast-600 text-brew-200 hover:border-brew-500'
-                  )}
+                  onClick={() => setSelectedOptions(prev => ({ ...prev, [modifier.id]: opt }))}
+                  className={`pill ${selectedOptions[modifier.id]?.id === opt.id ? 'pill-active' : ''}`}
                 >
                   {opt.name}
-                  {opt.price_delta > 0 && <span className="text-xs ml-1">+₱{opt.price_delta}</span>}
+                  {opt.price_delta > 0 && (
+                    <span className="ml-1 opacity-70">+₱{opt.price_delta}</span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
         ))}
 
+        {/* Notes */}
         <div className="mb-4">
-          <p className="text-xs font-semibold text-roast-400 uppercase tracking-wider mb-2">Notes</p>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2"
+            style={{ color: 'var(--text-faint)' }}>Notes</p>
           <input
             type="text"
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            placeholder="e.g. less sugar, extra hot..."
-            className="w-full bg-roast-700 border border-roast-600 rounded-lg px-3 py-2 text-sm text-brew-100 placeholder-roast-500 focus:outline-none focus:border-brew-500"
+            placeholder="e.g. less sugar, extra hot…"
+            className="input"
           />
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setQuantity(q => Math.max(1, q - 1))}
-              className="w-8 h-8 bg-roast-700 rounded-lg flex items-center justify-center text-brew-200 hover:bg-roast-600"
-            >
+        {/* Qty + Add */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 rounded-full px-3 py-2"
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+            <button onClick={() => setQuantity(q => Math.max(1, q - 1))}
+              style={{ color: 'var(--text-muted)' }}>
               <Minus size={14} />
             </button>
-            <span className="text-brew-100 font-bold w-4 text-center">{quantity}</span>
-            <button
-              onClick={() => setQuantity(q => q + 1)}
-              className="w-8 h-8 bg-roast-700 rounded-lg flex items-center justify-center text-brew-200 hover:bg-roast-600"
-            >
+            <span className="font-mono font-bold w-4 text-center" style={{ color: 'var(--text)' }}>
+              {quantity}
+            </span>
+            <button onClick={() => setQuantity(q => q + 1)}
+              style={{ color: 'var(--text-muted)' }}>
               <Plus size={14} />
             </button>
           </div>
-          <span className="font-bold text-brew-300 text-lg">₱{(totalPrice * quantity).toLocaleString()}</span>
+          <button
+            onClick={handleAdd}
+            disabled={!canAdd}
+            className="btn btn-primary flex-1"
+          >
+            Add to order · ₱{(totalPrice * quantity).toLocaleString()}
+          </button>
         </div>
-
-        <button
-          onClick={handleAdd}
-          disabled={!canAdd}
-          className={clsx('w-full btn-primary', !canAdd && 'opacity-50 cursor-not-allowed')}
-        >
-          Add to Order
-        </button>
       </div>
     </div>
   )
@@ -172,46 +163,34 @@ export default function NewOrderPage() {
     }
   })
 
-  const addToCart = (item: CartItem) => {
-    setCart(prev => [...prev, item])
-  }
-
-  const removeFromCart = (index: number) => {
-    setCart(prev => prev.filter((_, i) => i !== index))
-  }
-
   const cartTotal = cart.reduce((sum, item) => sum + item.unit_price * item.quantity, 0)
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   if (isLoading) return (
-    <div className="flex items-center justify-center h-64 text-roast-500">
-      Loading menu...
+    <div className="flex items-center justify-center h-64" style={{ color: 'var(--text-muted)' }}>
+      Loading menu…
     </div>
   )
 
   const categories = menuData?.categories ?? []
   const items = menuData?.items ?? []
-
   const activeCategory = activeCategoryId ?? categories[0]?.id
-  const visibleItems = items.filter(item =>
-    item.category_id === activeCategory && item.is_available
-  )
+  const visibleItems = items.filter(i => i.category_id === activeCategory && i.is_available)
 
   return (
-    <div className="flex flex-col h-[calc(100vh-112px)]">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 112px)' }}>
       {/* Header */}
-      <div className="bg-roast-800 border-b border-roast-700 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="text-roast-400 hover:text-brew-300">
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
+        className="px-4 py-3 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} style={{ color: 'var(--text-muted)' }}>
           <ChevronLeft size={20} />
         </button>
-        <h1 className="font-display font-bold text-brew-100 flex-1">New Order</h1>
-        <button
-          onClick={() => setShowCart(true)}
-          className="relative p-2 text-roast-400 hover:text-brew-300"
-        >
+        <h1 className="font-display text-xl flex-1" style={{ color: 'var(--text)' }}>New Order</h1>
+        <button onClick={() => setShowCart(true)} className="relative p-2" style={{ color: 'var(--text-muted)' }}>
           <ShoppingCart size={20} />
           {cartCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-brew-500 rounded-full text-white text-xs flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-xs flex items-center justify-center font-mono"
+              style={{ background: 'var(--accent)', color: '#0F0A06' }}>
               {cartCount}
             </span>
           )}
@@ -219,87 +198,74 @@ export default function NewOrderPage() {
       </div>
 
       {/* Source + customer */}
-      <div className="px-4 py-3 bg-roast-800 border-b border-roast-700 flex gap-2">
-        <button
-          onClick={() => setSource('walk_in')}
-          className={clsx('flex-1 text-xs py-1.5 rounded-lg border transition-colors',
-            source === 'walk_in'
-              ? 'bg-brew-500 border-brew-400 text-white'
-              : 'bg-roast-700 border-roast-600 text-roast-400'
-          )}
-        >
-          Walk-in
-        </button>
-        <button
-          onClick={() => setSource('messenger')}
-          className={clsx('flex-1 text-xs py-1.5 rounded-lg border transition-colors',
-            source === 'messenger'
-              ? 'bg-brew-500 border-brew-400 text-white'
-              : 'bg-roast-700 border-roast-600 text-roast-400'
-          )}
-        >
-          Messenger
-        </button>
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
+        className="px-4 py-2 flex gap-2">
+        {(['walk_in', 'messenger'] as const).map(s => (
+          <button key={s}
+            onClick={() => setSource(s)}
+            className={`pill text-xs ${source === s ? 'pill-active' : ''}`}>
+            {s === 'walk_in' ? 'Walk-in' : 'Messenger'}
+          </button>
+        ))}
         <input
           type="text"
           value={customerName}
           onChange={e => setCustomerName(e.target.value)}
-          placeholder="Customer name (optional)"
-          className="flex-[2] bg-roast-700 border border-roast-600 rounded-lg px-3 text-xs text-brew-100 placeholder-roast-500 focus:outline-none focus:border-brew-500"
+          placeholder="Customer name"
+          className="input text-xs py-1.5 flex-1"
+          style={{ borderRadius: 999 }}
         />
       </div>
 
       {/* Category tabs */}
-      <div className="flex overflow-x-auto gap-2 px-4 py-2 bg-roast-800 border-b border-roast-700 scrollbar-none">
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
+        className="flex overflow-x-auto gap-2 px-4 py-2 scrollbar-none">
         {categories.map(cat => (
           <button
             key={cat.id}
             onClick={() => setActiveCategoryId(cat.id)}
-            className={clsx(
-              'whitespace-nowrap text-xs px-3 py-1.5 rounded-full border transition-colors flex-shrink-0',
-              activeCategory === cat.id
-                ? 'bg-brew-500 border-brew-400 text-white'
-                : 'bg-roast-700 border-roast-600 text-roast-400 hover:border-brew-500'
-            )}
-          >
+            className={`pill flex-shrink-0 ${activeCategory === cat.id ? 'pill-active' : ''}`}>
             {cat.name}
           </button>
         ))}
       </div>
 
-      {/* Menu items */}
+      {/* Menu grid */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="grid grid-cols-2 gap-3">
           {visibleItems.map(item => (
             <button
               key={item.id}
               onClick={() => setSelectedItem(item)}
-              className="card p-3 text-left hover:border-brew-500 transition-colors active:scale-95"
+              className="card p-3 text-left hover:opacity-80 transition-opacity active:scale-95"
+              style={{ transition: 'transform 0.1s, opacity 0.15s' }}
             >
-              <p className="text-sm font-semibold text-brew-100 leading-tight mb-1">{item.name}</p>
-              <p className="text-brew-400 font-bold">₱{item.base_price}</p>
+              <p className="text-sm font-semibold leading-tight mb-2" style={{ color: 'var(--text)' }}>
+                {item.name}
+              </p>
+              <p className="font-mono font-bold text-sm" style={{ color: 'var(--accent)' }}>
+                ₱{item.base_price}
+              </p>
               {item.menu_item_modifiers.length > 0 && (
-                <p className="text-roast-500 text-xs mt-1">Has options</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>Has options</p>
               )}
             </button>
           ))}
           {visibleItems.length === 0 && (
-            <p className="text-roast-500 text-sm col-span-2 text-center py-16">
+            <p className="col-span-2 text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>
               No items in this category
             </p>
           )}
         </div>
       </div>
 
-      {/* Bottom bar */}
+      {/* Cart bar */}
       {cart.length > 0 && !showCart && (
-        <div className="px-4 py-3 bg-roast-800 border-t border-roast-700">
-          <button
-            onClick={() => setShowCart(true)}
-            className="w-full btn-primary flex items-center justify-between"
-          >
-            <span>{cartCount} item{cartCount !== 1 ? 's' : ''}</span>
-            <span>₱{cartTotal.toLocaleString()} — Review Order</span>
+        <div style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}
+          className="px-4 py-3">
+          <button onClick={() => setShowCart(true)} className="btn btn-primary w-full justify-between">
+            <span className="font-mono">{cartCount} item{cartCount !== 1 ? 's' : ''}</span>
+            <span>₱{cartTotal.toLocaleString()} · Review order</span>
           </button>
         </div>
       )}
@@ -309,63 +275,64 @@ export default function NewOrderPage() {
         <ItemModal
           item={selectedItem}
           menuData={menuData}
-          onAdd={addToCart}
+          onAdd={item => setCart(prev => [...prev, item])}
           onClose={() => setSelectedItem(null)}
         />
       )}
 
       {/* Cart modal */}
       {showCart && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60">
-          <div className="bg-roast-800 rounded-t-2xl w-full max-w-lg p-5 pb-16 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="w-full max-w-lg rounded-t-2xl p-5 pb-10 max-h-[85vh] overflow-y-auto"
+            style={{ background: 'var(--surface)' }}>
+
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-bold text-brew-100 text-lg">Order Summary</h3>
-              <button onClick={() => setShowCart(false)} className="text-roast-400 hover:text-brew-300 text-2xl leading-none">×</button>
+              <h3 className="font-display text-xl" style={{ color: 'var(--text)' }}>Order summary</h3>
+              <button onClick={() => setShowCart(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}>
+                <X size={15} />
+              </button>
             </div>
 
-            {/* Payment method */}
+            {/* Payment */}
             <div className="flex gap-2 mb-4">
               {['cash', 'gcash', 'card'].map(pm => (
-                <button
-                  key={pm}
+                <button key={pm}
                   onClick={() => setPaymentMethod(pm)}
-                  className={clsx(
-                    'flex-1 text-xs py-1.5 rounded-lg border capitalize transition-colors',
-                    paymentMethod === pm
-                      ? 'bg-brew-500 border-brew-400 text-white'
-                      : 'bg-roast-700 border-roast-600 text-roast-400'
-                  )}
-                >
+                  className={`pill flex-1 capitalize ${paymentMethod === pm ? 'pill-active' : ''}`}>
                   {pm}
                 </button>
               ))}
             </div>
 
-            {/* Cart items */}
+            {/* Items */}
             <div className="space-y-2 mb-4">
               {cart.map((item, i) => (
-                <div key={i} className="flex items-start justify-between bg-roast-700 rounded-lg p-3">
-                  <div className="flex-1">
-                    <p className="text-sm text-brew-100 font-semibold">
+                <div key={i} className="flex items-start justify-between rounded-xl p-3"
+                  style={{ background: 'var(--surface-2)' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
                       {item.quantity}× {item.item_name}
                     </p>
                     {item.modifiers.length > 0 && (
-                      <p className="text-xs text-roast-400">
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                         {item.modifiers.map(m => m.option_name).join(', ')}
                       </p>
                     )}
                     {item.notes && (
-                      <p className="text-xs text-roast-500 italic">{item.notes}</p>
+                      <p className="text-xs mt-0.5 italic" style={{ color: 'var(--text-faint)' }}>
+                        {item.notes}
+                      </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <span className="text-brew-300 font-bold text-sm">
+                  <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                    <span className="font-mono font-bold text-sm" style={{ color: 'var(--text)' }}>
                       ₱{(item.unit_price * item.quantity).toLocaleString()}
                     </span>
-                    <button
-                      onClick={() => removeFromCart(i)}
-                      className="text-red-400 hover:text-red-300"
-                    >
+                    <button onClick={() => setCart(prev => prev.filter((_, j) => j !== i))}
+                      style={{ color: 'var(--danger)' }}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -373,17 +340,21 @@ export default function NewOrderPage() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between mb-4 pt-2 border-t border-roast-700">
-              <span className="font-bold text-brew-100">Total</span>
-              <span className="font-bold text-brew-300 text-xl">₱{cartTotal.toLocaleString()}</span>
+            {/* Total */}
+            <div className="flex items-center justify-between py-3 mb-4"
+              style={{ borderTop: '1px solid var(--border)' }}>
+              <span className="font-semibold" style={{ color: 'var(--text)' }}>Total</span>
+              <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent)' }}>
+                ₱{cartTotal.toLocaleString()}
+              </span>
             </div>
 
             <button
               onClick={() => createOrder.mutate()}
               disabled={createOrder.isPending || cart.length === 0}
-              className="w-full btn-primary text-base py-3"
+              className="btn btn-primary w-full py-3 text-base"
             >
-              {createOrder.isPending ? 'Placing Order...' : 'Place Order'}
+              {createOrder.isPending ? 'Placing order…' : 'Place order'}
             </button>
           </div>
         </div>
