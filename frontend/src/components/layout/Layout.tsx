@@ -3,10 +3,10 @@ import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon 
 import { useTheme } from '../../hooks/useTheme'
 
 const nav = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/queue',     icon: Coffee,          label: 'Queue'     },
-  { to: '/orders',    icon: ListOrdered,     label: 'Orders'    },
-  { to: '/menu',      icon: UtensilsCrossed, label: 'Menu'      },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dash'   },
+  { to: '/queue',     icon: Coffee,          label: 'Queue'  },
+  { to: '/orders',    icon: ListOrdered,     label: 'Orders' },
+  { to: '/menu',      icon: UtensilsCrossed, label: 'Menu'   },
 ]
 
 export default function Layout() {
@@ -15,79 +15,73 @@ export default function Layout() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
 
-      {/* Top bar */}
+      {/* Topbar */}
       <header style={{
-        background: 'var(--surface)',
-        borderBottom: '1px solid var(--border)',
-        padding: '12px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px', height: 52,
+        background: 'var(--s1)', borderBottom: '1px solid var(--border)',
+        position: 'sticky', top: 0, zIndex: 100,
       }}>
-        {/* Brand */}
+        {/* Wordmark */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 34, height: 34,
-            background: 'var(--accent)',
-            borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 28, height: 28, background: 'var(--accent)',
+            borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Coffee size={16} color="#080503" strokeWidth={2.5} />
+            <Coffee size={14} color="#141414" strokeWidth={2.5} />
           </div>
           <div>
-            <div style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 15, fontWeight: 400, color: 'var(--text)', lineHeight: 1 }}>
+            <div className="type-ui" style={{ fontSize: 14, color: 'var(--t1)', lineHeight: 1 }}>
               BrewOS
             </div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1, marginTop: 3, letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: 9, color: 'var(--t3)', lineHeight: 1, marginTop: 2, fontFamily: 'IBM Plex Mono', letterSpacing: '0.06em' }}>
               GLIMPSE OF DEL
             </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Right controls */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={toggle} style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            width: 28, height: 28, borderRadius: 4, border: '1px solid var(--border)',
+            background: 'var(--s2)', color: 'var(--t2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-muted)',
+            cursor: 'pointer',
           }}>
-            {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
           </button>
-          <NavLink to="/orders/new" className="btn btn-primary btn-sm">
-            <Plus size={13} strokeWidth={2.5} />
-            New Order
+          <NavLink to="/orders/new" className="btn btn-accent" style={{ padding: '7px 14px', fontSize: 11 }}>
+            <Plus size={12} strokeWidth={3} />
+            New order
           </NavLink>
         </div>
       </header>
 
-      {/* Page content */}
       <main style={{ flex: 1, overflow: 'auto' }}>
         <Outlet />
       </main>
 
       {/* Bottom nav */}
       <nav style={{
-        background: 'var(--surface)',
-        borderTop: '1px solid var(--border)',
         display: 'flex',
-        position: 'sticky', bottom: 0, zIndex: 50,
+        background: 'var(--s1)', borderTop: '1px solid var(--border)',
+        position: 'sticky', bottom: 0, zIndex: 100,
       }}>
         {nav.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} style={({ isActive }) => ({
-            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 4, padding: '10px 0 12px',
-            fontSize: 10, fontWeight: 600, letterSpacing: '0.04em',
-            textDecoration: 'none', transition: 'color 0.15s',
-            color: isActive ? 'var(--accent)' : 'var(--text-faint)',
-          })}>
+          <NavLink key={to} to={to}
+            style={({ isActive }) => ({
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 3, padding: '10px 0 12px',
+              textDecoration: 'none', transition: 'color 0.12s',
+              fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 500,
+              letterSpacing: '0.04em',
+              color: isActive ? 'var(--accent)' : 'var(--t3)',
+              borderTop: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+            })}>
             {({ isActive }) => (
               <>
-                <Icon size={19} strokeWidth={isActive ? 2.5 : 1.8} />
-                {label}
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
+                {label.toUpperCase()}
               </>
             )}
           </NavLink>

@@ -1,16 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queueApi, ordersApi } from '../lib/api'
 import { Order } from '../types'
-import { Clock, Flame, CheckCheck, RotateCcw } from 'lucide-react'
 
 const COLS = [
-  { key: 'pending', label: 'Pending', icon: Clock,      next: 'brewing',   action: 'Start Brewing', color: 'var(--pending)', stripe: 'stripe-pending' },
-  { key: 'brewing', label: 'Brewing', icon: Flame,      next: 'ready',     action: 'Mark Ready',    color: 'var(--brewing)', stripe: 'stripe-brewing' },
-  { key: 'ready',   label: 'Ready',   icon: CheckCheck, next: 'picked_up', action: 'Picked Up ✓',  color: 'var(--ready)',   stripe: 'stripe-ready'   },
+  { key: 'pending', label: 'Pending', next: 'brewing',   action: 'Brew', dotClass: 'dot-pending', color: 'var(--pending)' },
+  { key: 'brewing', label: 'Brewing', next: 'ready',     action: 'Ready', dotClass: 'dot-brewing', color: 'var(--brewing)' },
+  { key: 'ready',   label: 'Ready',   next: 'picked_up', action: 'Done', dotClass: 'dot-ready',   color: 'var(--ready)'   },
 ]
 
-function OrderCard({ order, next, action, stripe }: {
-  order: Order, next: string, action: string, stripe: string
+function KDSCard({ order, next, action, dotClass }: {
+  order: Order, next: string, action: string, dotClass: string
 }) {
   const qc = useQueryClient()
   const advance = useMutation({
@@ -19,44 +18,59 @@ function OrderCard({ order, next, action, stripe }: {
   })
 
   return (
-    <div className={`card queue-stripe ${stripe}`} style={{ marginBottom: 8 }}>
-      <div style={{ padding: '10px 12px 10px 0' }}>
-        {/* Order number + time */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <span className="font-mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
+    <div className="panel" style={{ marginBottom: 6, overflow: 'hidden' }}>
+      {/* Order header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 12px 6px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--s2)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div className={`dot ${dotClass}`} />
+          <span className="type-data" style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
             {order.order_number}
           </span>
-          <span style={{ fontSize: 10, color: 'var(--text-faint)', fontWeight: 500 }}>
-            {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
-          </span>
         </div>
+        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.04em' }}>
+          {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
+        </span>
+      </div>
 
-        {/* Customer */}
+      {/* Items — KDS style */}
+      <div style={{ padding: '8px 12px' }}>
         {order.customer_name && (
-          <p style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6, letterSpacing: '0.03em' }}>
+          <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 6 }}>
             {order.customer_name.toUpperCase()}
           </p>
         )}
-
-        {/* Items */}
-        <div style={{ marginBottom: 10 }}>
-          {order.order_items.map((item, i) => (
-            <div key={i} style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.5 }}>
-              <span style={{ color: 'var(--text-faint)' }}>{item.quantity}×</span> {item.item_name}
+        {order.order_items.map((item, i) => (
+          <div key={i} className="kds-row" style={{ gap: 8 }}>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 12, color: 'var(--t3)', flexShrink: 0, minWidth: 14 }}>
+              {item.quantity}×
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--t1)', lineHeight: 1.3 }}>
+                {item.item_name}
+              </p>
               {item.order_item_modifiers.length > 0 && (
-                <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>
-                  {' '}· {item.order_item_modifiers.map(m => m.option_name).join(', ')}
-                </span>
+                <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>
+                  {item.order_item_modifiers.map(m => m.option_name).join(' · ')}
+                </p>
+              )}
+              {item.notes && (
+                <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>
+                  {item.notes}
+                </p>
               )}
             </div>
-          ))}
-        </div>
-
+          </div>
+        ))}
         <button
           onClick={() => advance.mutate()}
           disabled={advance.isPending}
-          className="btn btn-primary"
-          style={{ width: '100%', padding: '8px 12px', fontSize: 11 }}
+          className="btn btn-accent"
+          style={{ width: '100%', marginTop: 10, padding: '8px', fontSize: 11 }}
         >
           {advance.isPending ? '···' : action}
         </button>
@@ -74,69 +88,55 @@ export default function QueuePage() {
   })
 
   if (isLoading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: 'var(--text-muted)', fontSize: 13 }}>
-      Loading queue…
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--t3)' }}>LOADING···</span>
     </div>
   )
 
   const total = COLS.reduce((s, c) => s + (queue?.[c.key]?.length ?? 0), 0)
 
   return (
-    <div style={{ padding: '20px 16px' }}>
+    <div style={{ padding: '16px' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <h1 className="font-display" style={{ fontSize: 28, color: 'var(--text)', lineHeight: 1 }}>
-            Live Queue
+          <h1 className="type-display" style={{ fontSize: 24, color: 'var(--t1)', lineHeight: 1 }}>
+            Queue
           </h1>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-            {total} active order{total !== 1 ? 's' : ''} · auto-refreshes
+          <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--t3)', marginTop: 3, letterSpacing: '0.04em' }}>
+            {total} ORDER{total !== 1 ? 'S' : ''} ACTIVE
           </p>
         </div>
-        <button
-          onClick={() => qc.invalidateQueries({ queryKey: ['queue'] })}
-          style={{
-            width: 34, height: 34, borderRadius: '50%',
-            background: 'var(--surface-2)', border: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-muted)',
-          }}
-        >
-          <RotateCcw size={14} />
+        <button onClick={() => qc.invalidateQueries({ queryKey: ['queue'] })}
+          style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', cursor: 'pointer', background: 'none', border: 'none', letterSpacing: '0.06em' }}>
+          REFRESH
         </button>
       </div>
 
-      {/* 3 columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-        {COLS.map(({ key, label, icon: Icon, next, action, color, stripe }) => (
+      {/* 3-col KDS grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        {COLS.map(({ key, label, next, action, dotClass, color }) => (
           <div key={key}>
             {/* Column header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, paddingBottom: 8, borderBottom: `2px solid ${color}` }}>
-              <Icon size={12} style={{ color }} strokeWidth={2.5} />
-              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', color, textTransform: 'uppercase' }}>
-                {label}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 8, marginBottom: 8, borderBottom: `1px solid ${color}` }}>
+              <div className={`dot ${dotClass}`} style={{ width: 5, height: 5 }} />
+              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color, letterSpacing: '0.1em' }}>
+                {label.toUpperCase()}
               </span>
-              <span className="font-mono" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-faint)', fontWeight: 700 }}>
+              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', marginLeft: 'auto' }}>
                 {queue?.[key]?.length ?? 0}
               </span>
             </div>
 
-            {/* Empty state */}
             {(queue?.[key]?.length ?? 0) === 0 && (
-              <div style={{
-                border: '1px dashed var(--border)',
-                borderRadius: 10,
-                padding: '20px 8px',
-                textAlign: 'center',
-              }}>
-                <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>Empty</p>
+              <div style={{ border: '1px dashed var(--border)', borderRadius: 4, padding: '24px 8px', textAlign: 'center' }}>
+                <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)' }}>EMPTY</span>
               </div>
             )}
 
-            {/* Cards */}
             {queue?.[key]?.map((order: Order) => (
-              <OrderCard key={order.id} order={order} next={next} action={action} stripe={stripe} />
+              <KDSCard key={order.id} order={order} next={next} action={action} dotClass={dotClass} />
             ))}
           </div>
         ))}
