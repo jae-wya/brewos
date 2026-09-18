@@ -1,7 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
-import clsx from 'clsx'
 
 const nav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -14,64 +13,83 @@ export default function Layout() {
   const { theme, toggle } = useTheme()
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+
       {/* Top bar */}
       <header style={{
         background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
-      }} className="px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div style={{ background: 'var(--accent)', borderRadius: 10 }}
-            className="w-9 h-9 flex items-center justify-center shadow-sm">
-            <Coffee size={17} color="#0F0A06" />
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+      }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34,
+            background: 'var(--accent)',
+            borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Coffee size={16} color="#080503" strokeWidth={2.5} />
           </div>
           <div>
-            <p className="font-display font-bold leading-none text-sm" style={{ color: 'var(--text)' }}>
+            <div style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 15, fontWeight: 400, color: 'var(--text)', lineHeight: 1 }}>
               BrewOS
-            </p>
-            <p className="text-xs leading-none mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Glimpse of Del
-            </p>
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1, marginTop: 3, letterSpacing: '0.04em' }}>
+              GLIMPSE OF DEL
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggle}
-            style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-            className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
-          >
-            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={toggle} style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--text-muted)',
+          }}>
+            {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
           </button>
-          <NavLink
-            to="/orders/new"
-            className="btn btn-primary text-xs px-3 py-2"
-          >
-            <Plus size={14} /> New Order
+          <NavLink to="/orders/new" className="btn btn-primary btn-sm">
+            <Plus size={13} strokeWidth={2.5} />
+            New Order
           </NavLink>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="flex-1 overflow-auto">
+      {/* Page content */}
+      <main style={{ flex: 1, overflow: 'auto' }}>
         <Outlet />
       </main>
 
       {/* Bottom nav */}
-      <nav style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}
-        className="flex sticky bottom-0 z-50">
+      <nav style={{
+        background: 'var(--surface)',
+        borderTop: '1px solid var(--border)',
+        display: 'flex',
+        position: 'sticky', bottom: 0, zIndex: 50,
+      }}>
         {nav.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => clsx(
-              'flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
+          <NavLink key={to} to={to} style={({ isActive }) => ({
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 4, padding: '10px 0 12px',
+            fontSize: 10, fontWeight: 600, letterSpacing: '0.04em',
+            textDecoration: 'none', transition: 'color 0.15s',
+            color: isActive ? 'var(--accent)' : 'var(--text-faint)',
+          })}>
+            {({ isActive }) => (
+              <>
+                <Icon size={19} strokeWidth={isActive ? 2.5 : 1.8} />
+                {label}
+              </>
             )}
-            style={({ isActive }) => ({
-              color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-            })}
-          >
-            <Icon size={20} />
-            {label}
           </NavLink>
         ))}
       </nav>

@@ -10,24 +10,18 @@ function MenuItemRow({ item }: { item: MenuItem }) {
   })
 
   return (
-    <div className="flex items-center justify-between px-4 py-3"
-      style={{
-        borderBottom: '1px solid var(--border)',
-        opacity: item.is_available ? 1 : 0.45,
-      }}>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
-          {item.name}
-        </p>
-        <p className="font-mono text-xs mt-0.5" style={{ color: 'var(--accent)' }}>
-          ₱{item.base_price}
-        </p>
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '12px 16px', borderBottom: '1px solid var(--border)',
+      opacity: item.is_available ? 1 : 0.4, transition: 'opacity 0.2s',
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{item.name}</p>
+        <p className="font-mono" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700 }}>₱{item.base_price}</p>
       </div>
-      <button
-        onClick={() => toggle.mutate()}
-        disabled={toggle.isPending}
-        className={`toggle ${item.is_available ? 'toggle-on' : 'toggle-off'} ml-3`}
-      >
+      <button onClick={() => toggle.mutate()} disabled={toggle.isPending}
+        className={`toggle ${item.is_available ? 'toggle-on' : 'toggle-off'}`}
+        style={{ marginLeft: 12 }}>
         <span className="toggle-knob" />
       </button>
     </div>
@@ -35,40 +29,34 @@ function MenuItemRow({ item }: { item: MenuItem }) {
 }
 
 export default function MenuPage() {
-  const { data: menuData, isLoading } = useQuery<MenuData>({
-    queryKey: ['menu'],
-    queryFn: menuApi.getMenu,
-  })
+  const { data: menuData, isLoading } = useQuery<MenuData>({ queryKey: ['menu'], queryFn: menuApi.getMenu })
 
   if (isLoading) return (
-    <div className="flex items-center justify-center h-64" style={{ color: 'var(--text-muted)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: 'var(--text-muted)', fontSize: 13 }}>
       Loading menu…
     </div>
   )
 
   const categories = menuData?.categories ?? []
   const items = menuData?.items ?? []
-  const availableCount = items.filter(i => i.is_available).length
+  const available = items.filter(i => i.is_available).length
 
   return (
-    <div className="max-w-lg mx-auto pb-8">
-      <div className="px-4 pt-4 pb-3">
-        <h1 className="font-display text-2xl" style={{ color: 'var(--text)' }}>Menu</h1>
-        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-          {availableCount} of {items.length} items available · toggle to hide from orders
+    <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 32 }}>
+      <div style={{ padding: '20px 16px 12px' }}>
+        <h1 className="font-display" style={{ fontSize: 28, color: 'var(--text)' }}>Menu</h1>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+          {available} of {items.length} items available · toggle to hide
         </p>
       </div>
 
       {categories.map(cat => {
         const catItems = items.filter(i => i.category_id === cat.id)
-        if (catItems.length === 0) return null
+        if (!catItems.length) return null
         return (
-          <div key={cat.id} className="mb-4">
-            <div className="px-4 py-2"
-              style={{ background: 'var(--surface-2)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
-                {cat.name}
-              </p>
+          <div key={cat.id} style={{ marginBottom: 16 }}>
+            <div style={{ padding: '8px 16px', background: 'var(--surface-2)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+              <p className="section-label">{cat.name}</p>
             </div>
             <div style={{ background: 'var(--surface)' }}>
               {catItems.map(item => <MenuItemRow key={item.id} item={item} />)}
