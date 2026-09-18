@@ -22,18 +22,11 @@ export default function DashboardPage() {
           <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.08em', marginBottom: 4 }}>
             {date.toUpperCase()} · {shift.toUpperCase()}
           </p>
-          <h1 className="type-display" style={{ fontSize: 32, color: 'var(--t1)', lineHeight: 1 }}>
-            Today's<br />overview
-          </h1>
+          <h1 className="type-display" style={{ fontSize: 28, color: 'var(--t1)', lineHeight: 1.15, letterSpacing: '-0.01em' }}>
+                  Today's overview
+            </h1>
         </div>
-        <div style={{
-          width: 40, height: 40, borderRadius: 4,
-          background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 20 }}>☕</span>
-        </div>
+        
       </div>
 
       {/* Stats — receipt-style list, not cards */}
