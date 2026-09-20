@@ -4,8 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Night Market tokens ─── */
-:root {
+/* ─── Night Market tokens — dark mode default ─── */
+:root, [data-theme="dark"] {
   /* Surfaces — dark warm brown, like a counter at night */
   --bg:        #14100C;
   --s1:        #1E1810;
