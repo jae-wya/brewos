@@ -81,19 +81,15 @@ export default function DashboardPage() {
           <StatCard label="Active now"   value={stats?.active_orders    ?? 0} color="var(--pending)" delay={0}   />
           <StatCard label="Orders today" value={stats?.total_orders      ?? 0} color="var(--t1)"     delay={80}  />
           <StatCard label="Completed"    value={stats?.completed_orders  ?? 0} color="var(--ready)"  delay={160} />
-          {/* Placeholder to keep grid aligned */}
-          <div style={{ visibility: 'hidden' }} />
+          <StatCard label="Cancelled"    value={stats?.cancelled_orders  ?? 0} color="var(--t3)"     delay={200} />
           {/* Revenue — full width */}
           <div className="panel page-enter-child" style={{
-            gridColumn: '1 / -1', padding: '16px', animationDelay: '240ms',
+            gridColumn: '1 / -1', padding: '16px', animationDelay: '260ms',
             background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)',
           }}>
             <span className="label" style={{ color: 'var(--accent-lo)' }}>Revenue today</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 8 }}>
-              <span style={{ fontFamily: 'Figtree', fontSize: 20, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>₱</span>
-              <span className="data" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
-                {Number(stats?.total_revenue ?? 0).toLocaleString()}
-              </span>
+            <div className="data" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', marginTop: 8, lineHeight: 1 }}>
+              &#8369;{Number(stats?.total_revenue ?? 0).toLocaleString()}
             </div>
           </div>
         </div>
