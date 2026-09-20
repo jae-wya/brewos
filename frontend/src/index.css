@@ -281,29 +281,39 @@
 
   /* Toggle */
   .tog {
-    position: relative;
-    width: 42px;
-    height: 24px;
-    border-radius: var(--pill);
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
-    flex-shrink: 0;
-  }
-  .tog-on  { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); }
-  .tog-off { background: var(--s3); }
-  .tog-knob {
-    position: absolute;
-    top: 3px;
-    width: 18px;
-    height: 18px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-    transition: transform 0.18s cubic-bezier(.34,1.56,.64,1);
-  }
-  .tog-on  .tog-knob { transform: translateX(21px); }
-  .tog-off .tog-knob { transform: translateX(3px); }
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: var(--pill);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  /* 44px touch target without visual distortion */
+  -webkit-tap-highlight-color: transparent;
+}
+.tog::before {
+  content: '';
+  position: absolute;
+  inset: -10px -2px;
+  z-index: 0;
+}
+.tog-on  { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); }
+.tog-off { background: var(--s3); }
+.tog-knob {
+  position: absolute;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+  z-index: 1;
+}
+.tog-on  .tog-knob { transform: translateX(21px); }
+.tog-off .tog-knob { transform: translateX(3px); }
 
   /* Stepper */
   .stepper-btn {
