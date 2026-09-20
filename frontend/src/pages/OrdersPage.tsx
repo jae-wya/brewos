@@ -14,7 +14,7 @@ const S_LABEL: Record<string, string> = {
   picked_up: 'Picked up', cancelled: 'Cancelled',
 }
 
-function Row({ order }: { order: Order }) {
+function Row({ order, idx }: { order: Order, idx: number }) {
   const qc = useQueryClient()
   const markPaid = useMutation({
     mutationFn: () => ordersApi.markPaid(order.id),
@@ -22,22 +22,20 @@ function Row({ order }: { order: Order }) {
   })
 
   return (
-    <article className="panel" style={{ marginBottom: 8 }} aria-label={`Order ${order.order_number}`}>
+    <article className="panel page-enter-child" style={{ marginBottom: 8, animationDelay: `${idx * 40}ms` }} aria-label={`Order ${order.order_number}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px 8px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
-        <span className="type-data" style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
-          {order.order_number}
-        </span>
+        <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{order.order_number}</span>
         <span className={`badge ${S_BADGE[order.status]}`}>{S_LABEL[order.status]}</span>
         {order.source === 'messenger' && (
           <span className="badge" style={{ background: 'rgba(0,212,255,0.08)', color: 'var(--brewing)' }}>DM</span>
         )}
-        <span style={{ marginLeft: 'auto', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)' }}>
+        <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)' }}>
           {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
-      <div style={{ padding: '8px 14px 10px' }}>
+      <div style={{ padding: '8px 14px 12px' }}>
         {order.customer_name && (
-          <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 6 }}>
+          <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 6 }}>
             {order.customer_name.toUpperCase()}
           </p>
         )}
@@ -47,21 +45,17 @@ function Row({ order }: { order: Order }) {
           ))}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span className="type-data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)' }}>
+          <span className="data" style={{ fontSize: 18, fontWeight: 700, color: 'var(--t1)' }}>
             ₱{Number(order.total_amount).toLocaleString()}
           </span>
           {order.payment_status === 'unpaid' && order.status !== 'cancelled' ? (
-            <button
-              onClick={() => markPaid.mutate()}
-              disabled={markPaid.isPending}
-              className="btn btn-accent"
-              aria-label={`Mark order ${order.order_number} as paid`}
-              style={{ padding: '7px 16px', fontSize: 11 }}
-            >
+            <button onClick={() => markPaid.mutate()} disabled={markPaid.isPending}
+              className="btn btn-fire" aria-label={`Mark ${order.order_number} paid`}
+              style={{ padding: '8px 18px', fontSize: 12 }}>
               {markPaid.isPending ? '···' : 'Mark paid'}
             </button>
           ) : order.payment_status === 'paid' ? (
-            <span role="status" style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--ready)', letterSpacing: '0.06em' }}>PAID ✓</span>
+            <span role="status" style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--ready)', letterSpacing: '0.06em' }}>PAID ✓</span>
           ) : null}
         </div>
       </div>
@@ -76,42 +70,38 @@ export default function OrdersPage() {
   })
 
   return (
-    <div style={{ padding: '16px', maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h1 className="type-display" style={{ fontSize: 24, color: 'var(--t1)' }}>Orders</h1>
-        <NavLink to="/orders/new" className="btn btn-accent" style={{ padding: '8px 16px', fontSize: 12 }}>
+    <div className="page-enter" style={{ padding: '16px', maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95 }}>ORDERS</h1>
+        <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '9px 18px', fontSize: 12 }}>
           <Plus size={12} strokeWidth={3} aria-hidden="true" /> New
         </NavLink>
       </div>
 
       {waking && (
-        <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)' }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>WAKING SERVER···</span>
+        <div className="wake-banner" style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)' }}>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>WAKING SERVER···</span>
         </div>
       )}
 
       {isError && (
         <div style={{ padding: '12px 16px', marginBottom: 12, background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--danger)' }}>COULDN'T LOAD ORDERS</span>
-          <button onClick={() => refetch()} className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 10 }}>Retry</button>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--danger)' }}>COULDN'T LOAD ORDERS</span>
+          <button onClick={() => refetch()} className="btn btn-danger" style={{ padding: '6px 14px', fontSize: 11 }}>Retry</button>
         </div>
       )}
 
-      {isLoading && (
-        <div>
-          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 110, marginBottom: 8 }} />)}
-        </div>
-      )}
+      {isLoading && [1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 110, marginBottom: 8 }} />)}
 
       {!isLoading && !isError && orders.length === 0 && (
-        <div className="panel" role="status" style={{ padding: '40px 24px', textAlign: 'center' }}>
-          <p className="type-display" style={{ fontSize: 20, color: 'var(--t1)', marginBottom: 8 }}>No orders yet</p>
-          <p style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 20 }}>Ready when your first customer is.</p>
-          <NavLink to="/orders/new" className="btn btn-accent">Take an order</NavLink>
+        <div className="panel" role="status" style={{ padding: '48px 24px', textAlign: 'center' }}>
+          <p className="display" style={{ fontSize: 32, color: 'var(--t1)', marginBottom: 8 }}>NO ORDERS YET</p>
+          <p style={{ fontSize: 13, color: 'var(--t2)', marginBottom: 24 }}>Ready when your first customer is.</p>
+          <NavLink to="/orders/new" className="btn btn-fire">Take an order</NavLink>
         </div>
       )}
 
-      {orders.map((o: Order) => <Row key={o.id} order={o} />)}
+      {orders.map((o: Order, i: number) => <Row key={o.id} order={o} idx={i} />)}
     </div>
   )
 }
