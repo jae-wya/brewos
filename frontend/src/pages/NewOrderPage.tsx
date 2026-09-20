@@ -166,7 +166,7 @@ export default function NewOrderPage() {
         <button onClick={() => navigate(-1)} aria-label="Go back" style={{ color: 'var(--t2)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', padding: '10px 8px 10px 0' }}>
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
-        <span className="display" style={{ fontSize: 22, color: 'var(--t1)', flex: 1 }}>NEW ORDER</span>
+        <span className="display" style={{ fontSize: 26, color: 'var(--t1)', flex: 1, letterSpacing: '0.03em' }}>NEW ORDER</span>
         {count > 0 && (
           <button onClick={() => setShowCart(true)} className="btn btn-fire" aria-label={`Cart: ${count} items`} style={{ padding: '7px 14px', fontSize: 11 }}>
             Cart · {count}
