@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ordersApi } from '../lib/api'
+import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import { NavLink } from 'react-router-dom'
 import { Plus } from 'lucide-react'
@@ -21,9 +22,8 @@ function Row({ order }: { order: Order }) {
   })
 
   return (
-    <div className="panel" style={{ marginBottom: 8 }}>
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px 8px', borderBottom: '1px solid var(--border)' }}>
+    <article className="panel" style={{ marginBottom: 8 }} aria-label={`Order ${order.order_number}`}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px 8px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
         <span className="type-data" style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
           {order.order_number}
         </span>
@@ -35,8 +35,6 @@ function Row({ order }: { order: Order }) {
           {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
-
-      {/* Body */}
       <div style={{ padding: '8px 14px 10px' }}>
         {order.customer_name && (
           <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 6 }}>
@@ -53,41 +51,60 @@ function Row({ order }: { order: Order }) {
             ₱{Number(order.total_amount).toLocaleString()}
           </span>
           {order.payment_status === 'unpaid' && order.status !== 'cancelled' ? (
-            <button onClick={() => markPaid.mutate()} disabled={markPaid.isPending}
-              className="btn btn-accent" style={{ padding: '6px 14px', fontSize: 11 }}>
-              Mark paid
+            <button
+              onClick={() => markPaid.mutate()}
+              disabled={markPaid.isPending}
+              className="btn btn-accent"
+              aria-label={`Mark order ${order.order_number} as paid`}
+              style={{ padding: '7px 16px', fontSize: 11 }}
+            >
+              {markPaid.isPending ? '···' : 'Mark paid'}
             </button>
           ) : order.payment_status === 'paid' ? (
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--ready)', letterSpacing: '0.06em' }}>PAID ✓</span>
+            <span role="status" style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--ready)', letterSpacing: '0.06em' }}>PAID ✓</span>
           ) : null}
         </div>
       </div>
-    </div>
+    </article>
   )
 }
 
 export default function OrdersPage() {
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['orders'], queryFn: () => ordersApi.getOrders(), refetchInterval: 15_000,
+  const waking = useWakeState()
+  const { data: orders = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['orders'], queryFn: () => ordersApi.getOrders(), refetchInterval: 15_000, retry: 2,
   })
 
   return (
     <div style={{ padding: '16px', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <h1 className="type-display" style={{ fontSize: 24, color: 'var(--t1)' }}>Orders</h1>
-        <NavLink to="/orders/new" className="btn btn-accent" style={{ padding: '7px 14px', fontSize: 11 }}>
-          <Plus size={12} strokeWidth={3} /> New
+        <NavLink to="/orders/new" className="btn btn-accent" style={{ padding: '8px 16px', fontSize: 12 }}>
+          <Plus size={12} strokeWidth={3} aria-hidden="true" /> New
         </NavLink>
       </div>
 
-      {isLoading && (
-        <div style={{ textAlign: 'center', padding: '48px 0' }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--t3)' }}>LOADING···</span>
+      {waking && (
+        <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)' }}>
+          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>WAKING SERVER···</span>
         </div>
       )}
 
-      {!isLoading && orders.length === 0 && (
-        <div className="panel" style={{ padding: '40px 24px', textAlign: 'center' }}>
+      {isError && (
+        <div style={{ padding: '12px 16px', marginBottom: 12, background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--danger)' }}>COULDN'T LOAD ORDERS</span>
+          <button onClick={() => refetch()} className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 10 }}>Retry</button>
+        </div>
+      )}
+
+      {isLoading && (
+        <div>
+          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 110, marginBottom: 8 }} />)}
+        </div>
+      )}
+
+      {!isLoading && !isError && orders.length === 0 && (
+        <div className="panel" role="status" style={{ padding: '40px 24px', textAlign: 'center' }}>
           <p className="type-display" style={{ fontSize: 20, color: 'var(--t1)', marginBottom: 8 }}>No orders yet</p>
           <p style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 20 }}>Ready when your first customer is.</p>
           <NavLink to="/orders/new" className="btn btn-accent">Take an order</NavLink>

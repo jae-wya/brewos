@@ -1,9 +1,48 @@
 import axios from 'axios'
 
 export const BUSINESS_ID = 'a0000000-0000-0000-0000-000000000001'
-export const API_BASE = 'http://127.0.0.1:8000'
+export const API_BASE = 'https://brewos-api.onrender.com'
 
-const api = axios.create({ baseURL: API_BASE })
+const api = axios.create({
+  baseURL: API_BASE,
+  timeout: 35_000, // Render free tier can take 30s to wake
+})
+
+// Track if we're waiting on a cold start
+let _waking = false
+let _wakeListeners: Array<(waking: boolean) => void> = []
+export function onWakeChange(fn: (waking: boolean) => void) {
+  _wakeListeners.push(fn)
+  return () => { _wakeListeners = _wakeListeners.filter(l => l !== fn) }
+}
+
+api.interceptors.request.use(config => {
+  const timer = setTimeout(() => {
+    _waking = true
+    _wakeListeners.forEach(fn => fn(true))
+  }, 3000)
+  ;(config as any)._wakeTimer = timer
+  return config
+})
+
+api.interceptors.response.use(
+  response => {
+    clearTimeout((response.config as any)._wakeTimer)
+    if (_waking) {
+      _waking = false
+      _wakeListeners.forEach(fn => fn(false))
+    }
+    return response
+  },
+  error => {
+    clearTimeout((error.config as any)?._wakeTimer)
+    if (_waking) {
+      _waking = false
+      _wakeListeners.forEach(fn => fn(false))
+    }
+    return Promise.reject(error)
+  }
+)
 
 export const menuApi = {
   getMenu: () => api.get(`/menu/${BUSINESS_ID}`).then(r => r.data),

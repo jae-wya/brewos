@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queueApi, ordersApi } from '../lib/api'
+import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 
 const COLS = [
-  { key: 'pending', label: 'Pending', next: 'brewing',   action: 'Brew', dotClass: 'dot-pending', color: 'var(--pending)' },
-  { key: 'brewing', label: 'Brewing', next: 'ready',     action: 'Ready', dotClass: 'dot-brewing', color: 'var(--brewing)' },
-  { key: 'ready',   label: 'Ready',   next: 'picked_up', action: 'Done', dotClass: 'dot-ready',   color: 'var(--ready)'   },
+  { key: 'pending', label: 'Pending', next: 'brewing',   action: 'Start brewing', dotClass: 'dot-pending', color: 'var(--pending)' },
+  { key: 'brewing', label: 'Brewing', next: 'ready',     action: 'Mark ready',    dotClass: 'dot-brewing', color: 'var(--brewing)' },
+  { key: 'ready',   label: 'Ready',   next: 'picked_up', action: 'Picked up ✓',  dotClass: 'dot-ready',   color: 'var(--ready)'   },
 ]
 
 function KDSCard({ order, next, action, dotClass }: {
@@ -19,7 +21,7 @@ function KDSCard({ order, next, action, dotClass }: {
 
   return (
     <div className="panel" style={{ marginBottom: 6, overflow: 'hidden' }}>
-      {/* Order header */}
+      {/* Card header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '8px 12px 6px',
@@ -27,7 +29,7 @@ function KDSCard({ order, next, action, dotClass }: {
         background: 'var(--s2)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <div className={`dot ${dotClass}`} />
+          <div className={`dot ${dotClass}`} role="img" aria-label={next === 'brewing' ? 'Pending' : next === 'ready' ? 'Brewing' : 'Ready'} />
           <span className="type-data" style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
             {order.order_number}
           </span>
@@ -37,7 +39,6 @@ function KDSCard({ order, next, action, dotClass }: {
         </span>
       </div>
 
-      {/* Items — KDS style */}
       <div style={{ padding: '8px 12px' }}>
         {order.customer_name && (
           <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 6 }}>
@@ -45,23 +46,19 @@ function KDSCard({ order, next, action, dotClass }: {
           </p>
         )}
         {order.order_items.map((item, i) => (
-          <div key={i} className="kds-row" style={{ gap: 8 }}>
+          <div key={i} className="kds-row">
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 12, color: 'var(--t3)', flexShrink: 0, minWidth: 14 }}>
               {item.quantity}×
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--t1)', lineHeight: 1.3 }}>
-                {item.item_name}
-              </p>
+              <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--t1)', lineHeight: 1.3 }}>{item.item_name}</p>
               {item.order_item_modifiers.length > 0 && (
                 <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>
                   {item.order_item_modifiers.map(m => m.option_name).join(' · ')}
                 </p>
               )}
               {item.notes && (
-                <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>
-                  {item.notes}
-                </p>
+                <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>{item.notes}</p>
               )}
             </div>
           </div>
@@ -70,7 +67,8 @@ function KDSCard({ order, next, action, dotClass }: {
           onClick={() => advance.mutate()}
           disabled={advance.isPending}
           className="btn btn-accent"
-          style={{ width: '100%', marginTop: 10, padding: '8px', fontSize: 11 }}
+          style={{ width: '100%', marginTop: 10, padding: '9px', fontSize: 11 }}
+          aria-label={`${action} for order ${order.order_number}`}
         >
           {advance.isPending ? '···' : action}
         </button>
@@ -81,46 +79,133 @@ function KDSCard({ order, next, action, dotClass }: {
 
 export default function QueuePage() {
   const qc = useQueryClient()
-  const { data: queue, isLoading } = useQuery({
+  const waking = useWakeState()
+  const [activeTab, setActiveTab] = useState<string | null>(null)
+
+  const { data: queue, isLoading, isError, refetch } = useQuery({
     queryKey: ['queue'],
     queryFn: queueApi.getQueue,
     refetchInterval: 8_000,
+    retry: 2,
   })
-
-  if (isLoading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--t3)' }}>LOADING···</span>
-    </div>
-  )
 
   const total = COLS.reduce((s, c) => s + (queue?.[c.key]?.length ?? 0), 0)
 
+  // Mobile: show only the active tab, or default to first non-empty
+  const defaultTab = COLS.find(c => (queue?.[c.key]?.length ?? 0) > 0)?.key ?? 'pending'
+  const mobileActive = activeTab ?? defaultTab
+
+  if (isLoading) return (
+    <div style={{ padding: 16 }}>
+      <div style={{ marginBottom: 20 }}>
+        <div className="skeleton" style={{ width: 80, height: 28, marginBottom: 8 }} />
+        <div className="skeleton" style={{ width: 120, height: 14 }} />
+      </div>
+      {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 100, marginBottom: 8 }} />)}
+    </div>
+  )
+
   return (
     <div style={{ padding: '16px' }}>
-
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <h1 className="type-display" style={{ fontSize: 24, color: 'var(--t1)', lineHeight: 1 }}>
-            Queue
-          </h1>
+          <h1 className="type-display" style={{ fontSize: 24, color: 'var(--t1)', lineHeight: 1 }}>Queue</h1>
           <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--t3)', marginTop: 3, letterSpacing: '0.04em' }}>
             {total} ORDER{total !== 1 ? 'S' : ''} ACTIVE
           </p>
         </div>
-        <button onClick={() => qc.invalidateQueries({ queryKey: ['queue'] })}
-          style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)', cursor: 'pointer', background: 'none', border: 'none', letterSpacing: '0.06em' }}>
-          REFRESH
+        <button
+          onClick={() => refetch()}
+          className="icon-btn"
+          aria-label="Refresh queue"
+          style={{ width: 40, height: 40 }}
+        >
+          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, letterSpacing: '0.06em' }}>↺</span>
         </button>
       </div>
 
-      {/* 3-col KDS grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+      {/* Wake notice */}
+      {waking && (
+        <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)' }}>
+          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>
+            WAKING SERVER···
+          </span>
+        </div>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div style={{ padding: '12px 16px', marginBottom: 12, background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--danger)' }}>SERVER UNREACHABLE</span>
+          <button onClick={() => refetch()} className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 10 }}>Retry</button>
+        </div>
+      )}
+
+      {/* ── Mobile layout: status tabs + single column ── */}
+      <div style={{ display: 'block' }} className="md:hidden">
+        {/* Status filter tabs */}
+        <div style={{ display: 'flex', background: 'var(--s1)', border: '1px solid var(--border)', borderRadius: 'var(--r)', marginBottom: 12, overflow: 'hidden' }}>
+          {COLS.map(({ key, label, color, dotClass }) => {
+            const count = queue?.[key]?.length ?? 0
+            const isActive = mobileActive === key
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                aria-pressed={isActive}
+                aria-label={`${label}, ${count} orders`}
+                style={{
+                  flex: 1, padding: '10px 4px',
+                  background: isActive ? 'var(--s2)' : 'transparent',
+                  border: 'none',
+                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                  cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  transition: 'all 0.12s',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div className={`dot ${dotClass}`} style={{ width: 5, height: 5 }} aria-hidden="true" />
+                  <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color, letterSpacing: '0.08em' }}>
+                    {label.toUpperCase()}
+                  </span>
+                </div>
+                <span className="type-data" style={{ fontSize: 18, fontWeight: 700, color: isActive ? color : 'var(--t3)', lineHeight: 1 }}>
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Active column orders */}
+        {(() => {
+          const col = COLS.find(c => c.key === mobileActive)!
+          const orders = queue?.[mobileActive] ?? []
+          return (
+            <div>
+              {orders.length === 0 && (
+                <div style={{ border: '1px dashed var(--border)', borderRadius: 'var(--r)', padding: '40px', textAlign: 'center' }}>
+                  <p style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.06em' }}>
+                    NO {col.label.toUpperCase()} ORDERS
+                  </p>
+                </div>
+              )}
+              {orders.map((order: Order) => (
+                <KDSCard key={order.id} order={order} next={col.next} action={col.action} dotClass={col.dotClass} />
+              ))}
+            </div>
+          )
+        })()}
+      </div>
+
+      {/* ── Desktop layout: 3-col grid (hidden on mobile) ── */}
+      <div style={{ display: 'none' }} className="md:grid md:grid-cols-3 md:gap-3">
         {COLS.map(({ key, label, next, action, dotClass, color }) => (
           <div key={key}>
-            {/* Column header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 8, marginBottom: 8, borderBottom: `1px solid ${color}` }}>
-              <div className={`dot ${dotClass}`} style={{ width: 5, height: 5 }} />
+              <div className={`dot ${dotClass}`} style={{ width: 5, height: 5 }} aria-hidden="true" />
               <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color, letterSpacing: '0.1em' }}>
                 {label.toUpperCase()}
               </span>
@@ -128,13 +213,11 @@ export default function QueuePage() {
                 {queue?.[key]?.length ?? 0}
               </span>
             </div>
-
             {(queue?.[key]?.length ?? 0) === 0 && (
               <div style={{ border: '1px dashed var(--border)', borderRadius: 4, padding: '24px 8px', textAlign: 'center' }}>
                 <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--t3)' }}>EMPTY</span>
               </div>
             )}
-
             {queue?.[key]?.map((order: Order) => (
               <KDSCard key={order.id} order={order} next={next} action={action} dotClass={dotClass} />
             ))}
