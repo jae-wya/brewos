@@ -18,30 +18,18 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
   const unit = item.base_price + extra
   const canAdd = mods.filter(m => m.is_required).every(m => sel[m.id])
 
-  // Footer height — stepper row + optional warning + padding
-  const FOOTER_H = 88
-
   return (
-    <div
-      role="dialog" aria-modal="true" aria-label={`Add ${item.name}`}
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 60,
-        background: 'rgba(20,16,12,0.92)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      }}>
-      <div
-        onClick={e => e.stopPropagation()}
+    <div onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()}
         style={{
-          position: 'relative',
           width: '100%', maxWidth: 480,
           background: 'var(--s1)',
           borderRadius: '16px 16px 0 0',
-          /* Fixed height — never overflows viewport */
-          height: '72vh',
-          maxHeight: '72vh',
-          animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
-          overflow: 'hidden',
+          /* Simple approach: whole modal scrolls, button is last item, pb-40 ensures it's never hidden */
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          paddingBottom: 40,
         }}>
 
         {/* Drag handle */}
@@ -55,19 +43,13 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
               &#8369;{(unit * qty).toLocaleString()}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
+          <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36, flexShrink: 0 }}>
             <X size={13} aria-hidden="true" />
           </button>
         </div>
 
-        {/* Scrollable options — padded at bottom so footer doesn't cover content */}
-        <div style={{
-          overflowY: 'auto',
-          padding: '14px 16px',
-          paddingBottom: FOOTER_H + 16,
-          /* Subtract header (~88px) + drag handle (~27px) */
-          height: 'calc(100% - 115px)',
-        }}>
+        {/* Scrollable content */}
+        <div style={{ padding: '14px 16px' }}>
           {mods.map(mod => (
             <div key={mod.id} style={{ marginBottom: 18 }}>
               <p className="label" style={{ marginBottom: 10 }}>
@@ -96,16 +78,8 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
             <input id="item-notes" type="text" value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="less sugar, no ice…" className="field" />
           </div>
-        </div>
 
-        {/* Footer — absolutely pinned to bottom, always visible */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0, left: 0, right: 0,
-          background: 'var(--s1)',
-          borderTop: '1px solid var(--border)',
-          padding: '12px 16px 16px',
-        }}>
+          {/* Stepper + Add button — inline, scrolls with content */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease" className="stepper-btn">
               <Minus size={16} aria-hidden="true" />
@@ -137,7 +111,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
             </button>
           </div>
           {!canAdd && mods.some(m => m.is_required) && (
-            <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 8, letterSpacing: '0.04em' }}>
+            <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 10, letterSpacing: '0.04em' }}>
               * SELECT REQUIRED OPTIONS TO CONTINUE
             </p>
           )}
@@ -289,23 +263,22 @@ export default function NewOrderPage() {
         </div>
       )}
 
-      {/* Item modal */}
       {selItem && menuData && (
         <ItemModal item={selItem} menuData={menuData}
           onAdd={i => setCart(p => [...p, i])} onClose={() => setSelItem(null)} />
       )}
 
-      {/* Cart sheet */}
+      {/* Cart sheet — same simple approach: whole thing scrolls, button at bottom with pb-40 */}
       {showCart && (
         <div role="dialog" aria-modal="true" aria-label="Order summary"
           style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div style={{
-            position: 'relative',
             width: '100%', maxWidth: 480,
             background: 'var(--s1)',
             borderRadius: '16px 16px 0 0',
-            height: '72vh',
-            overflow: 'hidden',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            paddingBottom: 40,
             animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
           }}>
             <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
@@ -316,8 +289,7 @@ export default function NewOrderPage() {
               </button>
             </div>
 
-            {/* Scrollable cart — bottom padded so footer doesn't cover */}
-            <div style={{ overflowY: 'auto', padding: '14px 16px', paddingBottom: 140, height: 'calc(100% - 60px)' }}>
+            <div style={{ padding: '14px 16px' }}>
               <p className="label" style={{ marginBottom: 10 }}>Payment</p>
               <div role="group" aria-label="Payment method" style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
                 {['cash', 'gcash', 'card'].map(pm => (
@@ -354,23 +326,16 @@ export default function NewOrderPage() {
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* Footer — absolutely pinned */}
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
-              background: 'var(--s1)',
-              borderTop: '1px solid var(--border)',
-              padding: '14px 16px 18px',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '16px 0 14px' }}>
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.08em' }}>TOTAL</span>
-                <span className="data" style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
+                <span className="data" style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
                   &#8369;{total.toLocaleString()}
                 </span>
               </div>
+
               <button onClick={() => place.mutate()} disabled={place.isPending || !cart.length}
-                className="btn btn-fire" style={{ width: '100%', padding: '15px', fontSize: 15 }}>
+                className="btn btn-fire" style={{ width: '100%', padding: '16px', fontSize: 15 }}>
                 {place.isPending ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(20,16,12,0.3)', borderTopColor: '#14100C', animation: 'spin 0.6s linear infinite', display: 'inline-block' }} />
