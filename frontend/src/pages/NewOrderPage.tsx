@@ -57,7 +57,12 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
                 {mod.modifier_options.map(opt => {
                   const isSelected = sel[mod.id]?.id === opt.id
                   return (
-                    <button key={opt.id} onClick={() => setSel(p => ({ ...p, [mod.id]: opt }))}
+                    <button key={opt.id} onClick={() => setSel(p => {
+                        if (p[mod.id]?.id === opt.id) {
+                          const next = { ...p }; delete next[mod.id]; return next
+                        }
+                        return { ...p, [mod.id]: opt }
+                      })}
                       aria-pressed={isSelected}
                       className={`chip ${isSelected ? 'chip-on' : ''}`}>
                       {isSelected && <Check size={10} aria-hidden="true" style={{ marginRight: 2 }} />}
