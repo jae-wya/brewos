@@ -18,6 +18,9 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
   const unit = item.base_price + extra
   const canAdd = mods.filter(m => m.is_required).every(m => sel[m.id])
 
+  // Footer height — stepper row + optional warning + padding
+  const FOOTER_H = 88
+
   return (
     <div
       role="dialog" aria-modal="true" aria-label={`Add ${item.name}`}
@@ -30,34 +33,41 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
       <div
         onClick={e => e.stopPropagation()}
         style={{
+          position: 'relative',
           width: '100%', maxWidth: 480,
           background: 'var(--s1)',
           borderRadius: '16px 16px 0 0',
-          /* KEY FIX: use dvh (dynamic viewport height) with fallback */
-          maxHeight: 'min(85dvh, 85vh)',
-          display: 'flex',
-          flexDirection: 'column',
+          /* Fixed height — never overflows viewport */
+          height: '72vh',
+          maxHeight: '72vh',
           animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
+          overflow: 'hidden',
         }}>
-        {/* Drag handle — fixed at top */}
-        <div style={{ flexShrink: 0 }}>
-          <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '14px 16px 12px', borderBottom: '1px solid var(--border)' }}>
-            <div>
-              <p className="display" style={{ fontSize: 24, color: 'var(--t1)' }}>{item.name.toUpperCase()}</p>
-              <p className="data" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', marginTop: 4 }}>
-                &#8369;{(unit * qty).toLocaleString()}
-              </p>
-            </div>
-            <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
-              <X size={13} aria-hidden="true" />
-            </button>
+
+        {/* Drag handle */}
+        <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '14px 16px 12px', borderBottom: '1px solid var(--border)' }}>
+          <div>
+            <p className="display" style={{ fontSize: 24, color: 'var(--t1)' }}>{item.name.toUpperCase()}</p>
+            <p className="data" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', marginTop: 4 }}>
+              &#8369;{(unit * qty).toLocaleString()}
+            </p>
           </div>
+          <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
+            <X size={13} aria-hidden="true" />
+          </button>
         </div>
 
-        {/* Scrollable body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+        {/* Scrollable options — padded at bottom so footer doesn't cover content */}
+        <div style={{
+          overflowY: 'auto',
+          padding: '14px 16px',
+          paddingBottom: FOOTER_H + 16,
+          /* Subtract header (~88px) + drag handle (~27px) */
+          height: 'calc(100% - 115px)',
+        }}>
           {mods.map(mod => (
             <div key={mod.id} style={{ marginBottom: 18 }}>
               <p className="label" style={{ marginBottom: 10 }}>
@@ -88,13 +98,13 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
           </div>
         </div>
 
-        {/* Footer — fixed at bottom, never hidden */}
+        {/* Footer — absolutely pinned to bottom, always visible */}
         <div style={{
-          flexShrink: 0,
-          padding: '12px 16px',
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom))', marginBottom: '8px',
-          borderTop: '1px solid var(--border)',
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0,
           background: 'var(--s1)',
+          borderTop: '1px solid var(--border)',
+          padding: '12px 16px 16px',
         }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease" className="stepper-btn">
@@ -208,11 +218,7 @@ export default function NewOrderPage() {
   )
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      /* dvh = dynamic viewport height, accounts for browser chrome on mobile */
-      height: 'calc(100dvh - 110px)',
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100svh - 110px)' }}>
       {/* Sub-header */}
       <div style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '0 14px', height: 52, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <button onClick={() => navigate(-1)} aria-label="Go back"
@@ -249,13 +255,13 @@ export default function NewOrderPage() {
         ))}
       </div>
 
-      {/* Menu grid — scrollable */}
+      {/* Menu grid */}
       <div role="tabpanel" style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {visible.map((item, idx) => (
             <button key={item.id} onClick={() => setSelItem(item)}
               className="panel menu-card"
-              aria-label={`${item.name}, &#8369;${item.base_price}`}
+              aria-label={`${item.name}`}
               style={{ padding: '14px', textAlign: 'left', animation: `childEnter 0.3s ${idx * 30}ms both` }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', lineHeight: 1.3, marginBottom: 8 }}>{item.name}</p>
               <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>&#8369;{item.base_price}</p>
@@ -274,7 +280,7 @@ export default function NewOrderPage() {
 
       {/* Cart bar */}
       {count > 0 && !showCart && (
-        <div style={{ background: 'var(--s1)', borderTop: '1px solid var(--border)', padding: '10px 14px', paddingBottom: 'max(10px, env(safe-area-inset-bottom))', flexShrink: 0 }}>
+        <div style={{ background: 'var(--s1)', borderTop: '1px solid var(--border)', padding: '10px 14px', flexShrink: 0 }}>
           <button onClick={() => setShowCart(true)} className="btn btn-fire"
             style={{ width: '100%', padding: '14px', justifyContent: 'space-between', fontSize: 14 }}>
             <span className="data">{count} item{count !== 1 ? 's' : ''}</span>
@@ -294,26 +300,24 @@ export default function NewOrderPage() {
         <div role="dialog" aria-modal="true" aria-label="Order summary"
           style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div style={{
+            position: 'relative',
             width: '100%', maxWidth: 480,
             background: 'var(--s1)',
             borderRadius: '16px 16px 0 0',
-            maxHeight: 'min(83dvh, 83vh)',
-            display: 'flex', flexDirection: 'column',
+            height: '72vh',
+            overflow: 'hidden',
             animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
           }}>
-            {/* Header */}
-            <div style={{ flexShrink: 0 }}>
-              <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-                <span className="display" style={{ fontSize: 26, color: 'var(--t1)' }}>SUMMARY</span>
-                <button onClick={() => setShowCart(false)} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
-                  <X size={13} aria-hidden="true" />
-                </button>
-              </div>
+            <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+              <span className="display" style={{ fontSize: 26, color: 'var(--t1)' }}>SUMMARY</span>
+              <button onClick={() => setShowCart(false)} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
+                <X size={13} aria-hidden="true" />
+              </button>
             </div>
 
-            {/* Scrollable cart content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+            {/* Scrollable cart — bottom padded so footer doesn't cover */}
+            <div style={{ overflowY: 'auto', padding: '14px 16px', paddingBottom: 140, height: 'calc(100% - 60px)' }}>
               <p className="label" style={{ marginBottom: 10 }}>Payment</p>
               <div role="group" aria-label="Payment method" style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
                 {['cash', 'gcash', 'card'].map(pm => (
@@ -352,22 +356,21 @@ export default function NewOrderPage() {
               </div>
             </div>
 
-            {/* Footer — always visible */}
+            {/* Footer — absolutely pinned */}
             <div style={{
-              flexShrink: 0,
-              padding: '14px 16px',
-              paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
-              borderTop: '1px solid var(--border)',
+              position: 'absolute', bottom: 0, left: 0, right: 0,
               background: 'var(--s1)',
+              borderTop: '1px solid var(--border)',
+              padding: '14px 16px 18px',
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.08em' }}>TOTAL</span>
-                <span className="data" style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
+                <span className="data" style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
                   &#8369;{total.toLocaleString()}
                 </span>
               </div>
               <button onClick={() => place.mutate()} disabled={place.isPending || !cart.length}
-                className="btn btn-fire" style={{ width: '100%', padding: '16px', fontSize: 15 }}>
+                className="btn btn-fire" style={{ width: '100%', padding: '15px', fontSize: 15 }}>
                 {place.isPending ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(20,16,12,0.3)', borderTopColor: '#14100C', animation: 'spin 0.6s linear infinite', display: 'inline-block' }} />
