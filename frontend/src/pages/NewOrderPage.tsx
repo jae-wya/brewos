@@ -19,26 +19,45 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
   const canAdd = mods.filter(m => m.is_required).every(m => sel[m.id])
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`Add ${item.name}`}
+    <div
+      role="dialog" aria-modal="true" aria-label={`Add ${item.name}`}
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()}
-        style={{ width: '100%', maxWidth: 480, background: 'var(--s1)', borderRadius: '16px 16px 0 0', maxHeight: '90vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 24px)', animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both' }}>
-        <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
-
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '14px 16px 12px', borderBottom: '1px solid var(--border)' }}>
-          <div>
-            <p className="display" style={{ fontSize: 24, color: 'var(--t1)' }}>{item.name.toUpperCase()}</p>
-            <p className="data" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', marginTop: 4 }}>
-              ₱{(unit * qty).toLocaleString()}
-            </p>
+      style={{
+        position: 'fixed', inset: 0, zIndex: 60,
+        background: 'rgba(20,16,12,0.92)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 480,
+          background: 'var(--s1)',
+          borderRadius: '16px 16px 0 0',
+          /* KEY FIX: use dvh (dynamic viewport height) with fallback */
+          maxHeight: 'min(90dvh, 90vh)',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
+        }}>
+        {/* Drag handle — fixed at top */}
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '14px 16px 12px', borderBottom: '1px solid var(--border)' }}>
+            <div>
+              <p className="display" style={{ fontSize: 24, color: 'var(--t1)' }}>{item.name.toUpperCase()}</p>
+              <p className="data" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', marginTop: 4 }}>
+                &#8369;{(unit * qty).toLocaleString()}
+              </p>
+            </div>
+            <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
+              <X size={13} aria-hidden="true" />
+            </button>
           </div>
-          <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
-            <X size={13} aria-hidden="true" />
-          </button>
         </div>
 
-        <div style={{ padding: '14px 16px' }}>
+        {/* Scrollable body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
           {mods.map(mod => (
             <div key={mod.id} style={{ marginBottom: 18 }}>
               <p className="label" style={{ marginBottom: 10 }}>
@@ -54,7 +73,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
                       style={{ minHeight: 'var(--touch)' }}>
                       {isSelected && <Check size={10} aria-hidden="true" style={{ marginRight: 2 }} />}
                       {opt.name}
-                      {opt.price_delta > 0 && <span style={{ opacity: 0.7 }}> +₱{opt.price_delta}</span>}
+                      {opt.price_delta > 0 && <span style={{ opacity: 0.7 }}> +&#8369;{opt.price_delta}</span>}
                     </button>
                   )
                 })}
@@ -67,28 +86,48 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
             <input id="item-notes" type="text" value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="less sugar, no ice…" className="field" />
           </div>
+        </div>
 
+        {/* Footer — fixed at bottom, never hidden */}
+        <div style={{
+          flexShrink: 0,
+          padding: '12px 16px',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--s1)',
+        }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease quantity" className="stepper-btn">
+            <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease" className="stepper-btn">
               <Minus size={16} aria-hidden="true" />
             </button>
-            <span className="data" aria-live="polite" aria-label={`Quantity: ${qty}`}
+            <span className="data" aria-live="polite"
               style={{ fontSize: 20, fontWeight: 700, color: 'var(--t1)', minWidth: 32, textAlign: 'center' }}>
               {qty}
             </span>
-            <button onClick={() => setQty(q => q + 1)} aria-label="Increase quantity" className="stepper-btn">
+            <button onClick={() => setQty(q => q + 1)} aria-label="Increase" className="stepper-btn">
               <Plus size={16} aria-hidden="true" />
             </button>
             <button
-              onClick={() => { if (canAdd) { onAdd({ menu_item_id: item.id, item_name: item.name, unit_price: unit, quantity: qty, notes, modifiers: Object.values(sel).map(o => ({ modifier_option_id: o.id, option_name: o.name, price_delta: o.price_delta })) }); onClose() } }}
+              onClick={() => {
+                if (canAdd) {
+                  onAdd({
+                    menu_item_id: item.id, item_name: item.name,
+                    unit_price: unit, quantity: qty, notes,
+                    modifiers: Object.values(sel).map(o => ({
+                      modifier_option_id: o.id, option_name: o.name, price_delta: o.price_delta
+                    }))
+                  })
+                  onClose()
+                }
+              }}
               disabled={!canAdd}
               className="btn btn-fire"
               style={{ flex: 1, height: 'var(--touch)', fontSize: 13 }}>
-              Add · ₱{(unit * qty).toLocaleString()}
+              Add · &#8369;{(unit * qty).toLocaleString()}
             </button>
           </div>
           {!canAdd && mods.some(m => m.is_required) && (
-            <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 10, letterSpacing: '0.04em' }}>
+            <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 8, letterSpacing: '0.04em' }}>
               * SELECT REQUIRED OPTIONS TO CONTINUE
             </p>
           )}
@@ -101,7 +140,12 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
 function SuccessOverlay({ orderNumber, onDone }: { orderNumber: string, onDone: () => void }) {
   return (
     <div className="success-overlay" role="alertdialog" aria-label="Order placed">
-      <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(0,232,135,0.12)', border: '2px solid var(--ready)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'checkPop 0.5s cubic-bezier(.34,1.56,.64,1) both' }}>
+      <div style={{
+        width: 80, height: 80, borderRadius: '50%',
+        background: 'rgba(0,232,135,0.12)', border: '2px solid var(--ready)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        animation: 'checkPop 0.5s cubic-bezier(.34,1.56,.64,1) both',
+      }}>
         <Check size={36} color="var(--ready)" strokeWidth={2.5} aria-hidden="true" />
       </div>
       <div style={{ textAlign: 'center' }}>
@@ -136,7 +180,11 @@ export default function NewOrderPage() {
     mutationFn: () => ordersApi.createOrder({
       business_id: BUSINESS_ID, source: src,
       customer_name: name || null, payment_method: pay,
-      items: cart.map(i => ({ menu_item_id: i.menu_item_id, item_name: i.item_name, unit_price: i.unit_price, quantity: i.quantity, notes: i.notes || null, modifiers: i.modifiers }))
+      items: cart.map(i => ({
+        menu_item_id: i.menu_item_id, item_name: i.item_name,
+        unit_price: i.unit_price, quantity: i.quantity,
+        notes: i.notes || null, modifiers: i.modifiers
+      }))
     }),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['orders', 'queue', 'stats'] })
@@ -160,31 +208,39 @@ export default function NewOrderPage() {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100svh - 110px)' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      /* dvh = dynamic viewport height, accounts for browser chrome on mobile */
+      height: 'calc(100dvh - 110px)',
+    }}>
       {/* Sub-header */}
-      <div style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '0 14px', height: 52, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={() => navigate(-1)} aria-label="Go back" style={{ color: 'var(--t2)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', padding: '10px 8px 10px 0' }}>
+      <div style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '0 14px', height: 52, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={() => navigate(-1)} aria-label="Go back"
+          style={{ color: 'var(--t2)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', padding: '10px 8px 10px 0' }}>
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
         <span className="display" style={{ fontSize: 26, color: 'var(--t1)', flex: 1, letterSpacing: '0.03em' }}>NEW ORDER</span>
         {count > 0 && (
-          <button onClick={() => setShowCart(true)} className="btn btn-fire" aria-label={`Cart: ${count} items`} style={{ padding: '7px 14px', fontSize: 11 }}>
+          <button onClick={() => setShowCart(true)} className="btn btn-fire"
+            aria-label={`Cart: ${count} items`} style={{ padding: '7px 14px', fontSize: 11 }}>
             Cart · {count}
           </button>
         )}
       </div>
 
       {/* Source + name */}
-      <div style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
         <button onClick={() => setSrc('walk_in')} aria-pressed={src === 'walk_in'} className={`chip ${src === 'walk_in' ? 'chip-on' : ''}`}>Walk-in</button>
         <button onClick={() => setSrc('messenger')} aria-pressed={src === 'messenger'} className={`chip ${src === 'messenger' ? 'chip-on' : ''}`}>Messenger</button>
         <label htmlFor="cname" style={{ display: 'none' }}>Customer name</label>
-        <input id="cname" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Customer name" className="field" style={{ flex: 1, padding: '8px 12px', fontSize: 12, borderRadius: 999, minHeight: 'var(--touch)' }} />
+        <input id="cname" type="text" value={name} onChange={e => setName(e.target.value)}
+          placeholder="Customer name" className="field"
+          style={{ flex: 1, padding: '8px 12px', fontSize: 12, borderRadius: 999, minHeight: 'var(--touch)' }} />
       </div>
 
-      {/* Category tabs with sliding indicator */}
+      {/* Category tabs */}
       <div className="scrollbar-none" role="tablist" aria-label="Menu categories"
-        style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 6, overflowX: 'auto' }}>
+        style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0 }}>
         {cats.map(c => (
           <button key={c.id} onClick={() => setActiveCat(c.id)} role="tab" aria-selected={cat === c.id}
             className={`chip flex-shrink-0 ${cat === c.id ? 'chip-on' : ''}`}>
@@ -193,16 +249,16 @@ export default function NewOrderPage() {
         ))}
       </div>
 
-      {/* Menu grid */}
+      {/* Menu grid — scrollable */}
       <div role="tabpanel" style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {visible.map((item, idx) => (
             <button key={item.id} onClick={() => setSelItem(item)}
               className="panel menu-card"
-              aria-label={`${item.name}, ₱${item.base_price}`}
+              aria-label={`${item.name}, &#8369;${item.base_price}`}
               style={{ padding: '14px', textAlign: 'left', animation: `childEnter 0.3s ${idx * 30}ms both` }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', lineHeight: 1.3, marginBottom: 8 }}>{item.name}</p>
-              <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>₱{item.base_price}</p>
+              <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>&#8369;{item.base_price}</p>
               {item.menu_item_modifiers.length > 0 && (
                 <p style={{ fontFamily: 'JetBrains Mono', fontSize: 8, color: 'var(--t3)', marginTop: 6, letterSpacing: '0.04em' }}>HAS OPTIONS</p>
               )}
@@ -218,34 +274,52 @@ export default function NewOrderPage() {
 
       {/* Cart bar */}
       {count > 0 && !showCart && (
-        <div style={{ background: 'var(--s1)', borderTop: '1px solid var(--border)', padding: '10px 14px', paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
-          <button onClick={() => setShowCart(true)} className="btn btn-fire" style={{ width: '100%', padding: '14px', justifyContent: 'space-between', fontSize: 14 }}>
+        <div style={{ background: 'var(--s1)', borderTop: '1px solid var(--border)', padding: '10px 14px', paddingBottom: 'max(10px, env(safe-area-inset-bottom))', flexShrink: 0 }}>
+          <button onClick={() => setShowCart(true)} className="btn btn-fire"
+            style={{ width: '100%', padding: '14px', justifyContent: 'space-between', fontSize: 14 }}>
             <span className="data">{count} item{count !== 1 ? 's' : ''}</span>
-            <span>₱{total.toLocaleString()} · Review</span>
+            <span>&#8369;{total.toLocaleString()} · Review</span>
           </button>
         </div>
       )}
 
+      {/* Item modal */}
       {selItem && menuData && (
-        <ItemModal item={selItem} menuData={menuData} onAdd={i => setCart(p => [...p, i])} onClose={() => setSelItem(null)} />
+        <ItemModal item={selItem} menuData={menuData}
+          onAdd={i => setCart(p => [...p, i])} onClose={() => setSelItem(null)} />
       )}
 
+      {/* Cart sheet */}
       {showCart && (
         <div role="dialog" aria-modal="true" aria-label="Order summary"
           style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: 480, background: 'var(--s1)', borderRadius: '16px 16px 0 0', maxHeight: '88vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 24px)', animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both' }}>
-            <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-              <span className="display" style={{ fontSize: 26, color: 'var(--t1)' }}>SUMMARY</span>
-              <button onClick={() => setShowCart(false)} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}><X size={13} aria-hidden="true" /></button>
+          <div style={{
+            width: '100%', maxWidth: 480,
+            background: 'var(--s1)',
+            borderRadius: '16px 16px 0 0',
+            maxHeight: 'min(88dvh, 88vh)',
+            display: 'flex', flexDirection: 'column',
+            animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
+          }}>
+            {/* Header */}
+            <div style={{ flexShrink: 0 }}>
+              <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                <span className="display" style={{ fontSize: 26, color: 'var(--t1)' }}>SUMMARY</span>
+                <button onClick={() => setShowCart(false)} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
+                  <X size={13} aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
-            <div style={{ padding: '14px 16px' }}>
+            {/* Scrollable cart content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
               <p className="label" style={{ marginBottom: 10 }}>Payment</p>
               <div role="group" aria-label="Payment method" style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
                 {['cash', 'gcash', 'card'].map(pm => (
                   <button key={pm} onClick={() => setPay(pm)} aria-pressed={pay === pm}
-                    className={`chip flex-1 ${pay === pm ? 'chip-on' : ''}`} style={{ textTransform: 'capitalize', justifyContent: 'center' }}>
+                    className={`chip flex-1 ${pay === pm ? 'chip-on' : ''}`}
+                    style={{ textTransform: 'capitalize', justifyContent: 'center' }}>
                     {pm}
                   </button>
                 ))}
@@ -256,12 +330,19 @@ export default function NewOrderPage() {
                   <div key={i} role="listitem" style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{item.quantity}× {item.item_name}</p>
-                      {item.modifiers.length > 0 && <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>{item.modifiers.map(m => m.option_name).join(' · ')}</p>}
+                      {item.modifiers.length > 0 && (
+                        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>
+                          {item.modifiers.map(m => m.option_name).join(' · ')}
+                        </p>
+                      )}
                       {item.notes && <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>{item.notes}</p>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 12 }}>
-                      <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>₱{(item.unit_price * item.quantity).toLocaleString()}</span>
-                      <button onClick={() => setCart(p => p.filter((_, j) => j !== i))} aria-label={`Remove ${item.item_name}`}
+                      <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
+                        &#8369;{(item.unit_price * item.quantity).toLocaleString()}
+                      </span>
+                      <button onClick={() => setCart(p => p.filter((_, j) => j !== i))}
+                        aria-label={`Remove ${item.item_name}`}
                         style={{ width: 'var(--touch)', height: 'var(--touch)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }}>
                         <Trash2 size={14} aria-hidden="true" />
                       </button>
@@ -269,12 +350,22 @@ export default function NewOrderPage() {
                   </div>
                 ))}
               </div>
+            </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '16px 0' }}>
+            {/* Footer — always visible */}
+            <div style={{
+              flexShrink: 0,
+              padding: '14px 16px',
+              paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
+              borderTop: '1px solid var(--border)',
+              background: 'var(--s1)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.08em' }}>TOTAL</span>
-                <span className="data" style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>₱{total.toLocaleString()}</span>
+                <span className="data" style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
+                  &#8369;{total.toLocaleString()}
+                </span>
               </div>
-
               <button onClick={() => place.mutate()} disabled={place.isPending || !cart.length}
                 className="btn btn-fire" style={{ width: '100%', padding: '16px', fontSize: 15 }}>
                 {place.isPending ? (
