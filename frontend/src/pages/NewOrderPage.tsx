@@ -26,10 +26,9 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
           width: '100%', maxWidth: 480,
           background: 'var(--s1)',
           borderRadius: '16px 16px 0 0',
-          /* Simple approach: whole modal scrolls, button is last item, pb-40 ensures it's never hidden */
+          padding: '0 0 40px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          paddingBottom: 40,
         }}>
 
         {/* Drag handle */}
@@ -48,21 +47,19 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
           </button>
         </div>
 
-        {/* Scrollable content */}
         <div style={{ padding: '14px 16px' }}>
           {mods.map(mod => (
             <div key={mod.id} style={{ marginBottom: 18 }}>
               <p className="label" style={{ marginBottom: 10 }}>
                 {mod.name} {mod.is_required && <span style={{ color: 'var(--danger)' }}>*</span>}
               </p>
-              <div role="group" aria-label={mod.name} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {mod.modifier_options.map(opt => {
                   const isSelected = sel[mod.id]?.id === opt.id
                   return (
                     <button key={opt.id} onClick={() => setSel(p => ({ ...p, [mod.id]: opt }))}
                       aria-pressed={isSelected}
-                      className={`chip ${isSelected ? 'chip-on' : ''}`}
-                      style={{ minHeight: 'var(--touch)' }}>
+                      className={`chip ${isSelected ? 'chip-on' : ''}`}>
                       {isSelected && <Check size={10} aria-hidden="true" style={{ marginRight: 2 }} />}
                       {opt.name}
                       {opt.price_delta > 0 && <span style={{ opacity: 0.7 }}> +&#8369;{opt.price_delta}</span>}
@@ -79,7 +76,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
               placeholder="less sugar, no ice…" className="field" />
           </div>
 
-          {/* Stepper + Add button — inline, scrolls with content */}
+          {/* Stepper + Add — inline with content, pb-40 on wrapper ensures they're never hidden */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease" className="stepper-btn">
               <Minus size={16} aria-hidden="true" />
@@ -268,7 +265,7 @@ export default function NewOrderPage() {
           onAdd={i => setCart(p => [...p, i])} onClose={() => setSelItem(null)} />
       )}
 
-      {/* Cart sheet — same simple approach: whole thing scrolls, button at bottom with pb-40 */}
+      {/* Cart sheet */}
       {showCart && (
         <div role="dialog" aria-modal="true" aria-label="Order summary"
           style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -276,9 +273,9 @@ export default function NewOrderPage() {
             width: '100%', maxWidth: 480,
             background: 'var(--s1)',
             borderRadius: '16px 16px 0 0',
+            padding: '0 0 40px',
             maxHeight: '90vh',
             overflowY: 'auto',
-            paddingBottom: 40,
             animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
           }}>
             <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
@@ -291,7 +288,7 @@ export default function NewOrderPage() {
 
             <div style={{ padding: '14px 16px' }}>
               <p className="label" style={{ marginBottom: 10 }}>Payment</p>
-              <div role="group" aria-label="Payment method" style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
                 {['cash', 'gcash', 'card'].map(pm => (
                   <button key={pm} onClick={() => setPay(pm)} aria-pressed={pay === pm}
                     className={`chip flex-1 ${pay === pm ? 'chip-on' : ''}`}
@@ -301,31 +298,29 @@ export default function NewOrderPage() {
                 ))}
               </div>
 
-              <div role="list" aria-label="Cart items">
-                {cart.map((item, i) => (
-                  <div key={i} role="listitem" style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{item.quantity}× {item.item_name}</p>
-                      {item.modifiers.length > 0 && (
-                        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>
-                          {item.modifiers.map(m => m.option_name).join(' · ')}
-                        </p>
-                      )}
-                      {item.notes && <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>{item.notes}</p>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 12 }}>
-                      <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
-                        &#8369;{(item.unit_price * item.quantity).toLocaleString()}
-                      </span>
-                      <button onClick={() => setCart(p => p.filter((_, j) => j !== i))}
-                        aria-label={`Remove ${item.item_name}`}
-                        style={{ width: 'var(--touch)', height: 'var(--touch)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }}>
-                        <Trash2 size={14} aria-hidden="true" />
-                      </button>
-                    </div>
+              {cart.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{item.quantity}× {item.item_name}</p>
+                    {item.modifiers.length > 0 && (
+                      <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>
+                        {item.modifiers.map(m => m.option_name).join(' · ')}
+                      </p>
+                    )}
+                    {item.notes && <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>{item.notes}</p>}
                   </div>
-                ))}
-              </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 12 }}>
+                    <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
+                      &#8369;{(item.unit_price * item.quantity).toLocaleString()}
+                    </span>
+                    <button onClick={() => setCart(p => p.filter((_, j) => j !== i))}
+                      aria-label={`Remove ${item.item_name}`}
+                      style={{ width: 'var(--touch)', height: 'var(--touch)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }}>
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              ))}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '16px 0 14px' }}>
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.08em' }}>TOTAL</span>
