@@ -34,7 +34,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
           background: 'var(--s1)',
           borderRadius: '16px 16px 0 0',
           /* KEY FIX: use dvh (dynamic viewport height) with fallback */
-          maxHeight: 'min(90dvh, 90vh)',
+          maxHeight: 'min(85dvh, 85vh)',
           display: 'flex',
           flexDirection: 'column',
           animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
@@ -92,7 +92,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
         <div style={{
           flexShrink: 0,
           padding: '12px 16px',
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom))', marginBottom: '8px',
           borderTop: '1px solid var(--border)',
           background: 'var(--s1)',
         }}>
@@ -297,7 +297,7 @@ export default function NewOrderPage() {
             width: '100%', maxWidth: 480,
             background: 'var(--s1)',
             borderRadius: '16px 16px 0 0',
-            maxHeight: 'min(88dvh, 88vh)',
+            maxHeight: 'min(83dvh, 83vh)',
             display: 'flex', flexDirection: 'column',
             animation: 'pageEnter 0.28s cubic-bezier(.22,1,.36,1) both',
           }}>
