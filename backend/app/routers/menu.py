@@ -29,6 +29,13 @@ async def get_menu(business_id: str):
         .is_("deleted_at", None)\
         .execute()
 
+    # Filter out unavailable modifier options
+    for mod in modifiers.data:
+        mod["modifier_options"] = [
+            opt for opt in mod["modifier_options"]
+            if opt.get("is_available", True)
+        ]
+
     return {
         "categories": categories.data,
         "items": items.data,
@@ -57,3 +64,25 @@ async def toggle_item(business_id: str, item_id: str):
         .execute()
 
     return updated.data
+
+
+@router.patch("/{business_id}/modifier-options/{option_id}/toggle")
+async def toggle_modifier_option(business_id: str, option_id: str):
+    """Toggle modifier option availability (e.g. Espresso Shot, Nacho Sauce)."""
+    supabase = get_supabase_admin()
+
+    result = supabase.table("modifier_options")\
+        .select("is_available")\
+        .eq("id", option_id)\
+        .single()\
+        .execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Option not found")
+
+    supabase.table("modifier_options")\
+        .update({"is_available": not result.data["is_available"]})\
+        .eq("id", option_id)\
+        .execute()
+
+    return {"id": option_id, "is_available": not result.data["is_available"]}
