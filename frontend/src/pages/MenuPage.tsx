@@ -129,8 +129,8 @@ function MenuItemRow({ item, allModifiers, idx }: {
 
 export default function MenuPage() {
   const { data: menuData, isLoading } = useQuery<MenuData>({
-    queryKey: ['menu'],
-    queryFn: menuApi.getMenu,
+    queryKey: ['menu-full'],
+    queryFn: menuApi.getFullMenu,
   })
 
   if (isLoading) return (

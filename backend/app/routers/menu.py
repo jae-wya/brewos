@@ -5,8 +5,11 @@ router = APIRouter()
 
 
 @router.get("/{business_id}")
-async def get_menu(business_id: str):
-    """Returns full menu with categories, items, and modifiers."""
+async def get_menu(business_id: str, include_all: bool = False):
+    """Returns full menu with categories, items, and modifiers.
+    include_all=true returns all modifier options including unavailable (for management UI).
+    include_all=false (default) filters out unavailable options (for order-taking UI).
+    """
     supabase = get_supabase_admin()
 
     categories = supabase.table("categories")\
@@ -29,12 +32,14 @@ async def get_menu(business_id: str):
         .is_("deleted_at", None)\
         .execute()
 
-    # Filter out unavailable modifier options
-    for mod in modifiers.data:
-        mod["modifier_options"] = [
-            opt for opt in mod["modifier_options"]
-            if opt.get("is_available", True)
-        ]
+    # For order-taking: filter out unavailable options
+    # For management: return all so toggles can be shown
+    if not include_all:
+        for mod in modifiers.data:
+            mod["modifier_options"] = [
+                opt for opt in mod["modifier_options"]
+                if opt.get("is_available", True)
+            ]
 
     return {
         "categories": categories.data,

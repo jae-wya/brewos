@@ -39,6 +39,7 @@ api.interceptors.response.use(
 
 export const menuApi = {
   getMenu: () => api.get(`/menu/${BUSINESS_ID}`).then(r => r.data),
+  getFullMenu: () => api.get(`/menu/${BUSINESS_ID}?include_all=true`).then(r => r.data),
   toggleItem: (itemId: string) =>
     api.patch(`/menu/${BUSINESS_ID}/items/${itemId}/toggle`).then(r => r.data),
   toggleModifierOption: (optionId: string) =>
