@@ -5,10 +5,9 @@ export const API_BASE = 'https://brewos-api.onrender.com'
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 35_000, // Render free tier can take 30s to wake
+  timeout: 35_000,
 })
 
-// Track if we're waiting on a cold start
 let _waking = false
 let _wakeListeners: Array<(waking: boolean) => void> = []
 export function onWakeChange(fn: (waking: boolean) => void) {
@@ -28,18 +27,12 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   response => {
     clearTimeout((response.config as any)._wakeTimer)
-    if (_waking) {
-      _waking = false
-      _wakeListeners.forEach(fn => fn(false))
-    }
+    if (_waking) { _waking = false; _wakeListeners.forEach(fn => fn(false)) }
     return response
   },
   error => {
     clearTimeout((error.config as any)?._wakeTimer)
-    if (_waking) {
-      _waking = false
-      _wakeListeners.forEach(fn => fn(false))
-    }
+    if (_waking) { _waking = false; _wakeListeners.forEach(fn => fn(false)) }
     return Promise.reject(error)
   }
 )
@@ -48,6 +41,8 @@ export const menuApi = {
   getMenu: () => api.get(`/menu/${BUSINESS_ID}`).then(r => r.data),
   toggleItem: (itemId: string) =>
     api.patch(`/menu/${BUSINESS_ID}/items/${itemId}/toggle`).then(r => r.data),
+  toggleModifierOption: (optionId: string) =>
+    api.patch(`/menu/${BUSINESS_ID}/modifier-options/${optionId}/toggle`).then(r => r.data),
 }
 
 export const ordersApi = {
