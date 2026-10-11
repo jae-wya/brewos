@@ -119,7 +119,9 @@ def a_or_an(word: str) -> str:
 
 
 def duplicate_item_message(category_name: str, item_name: str) -> str:
-    return f"You already have {a_or_an(category_name)} {category_name} called {item_name}."
+    # Item first, category second: reads right for plural category names too
+    # ("There's already a Fries in Snacks.").
+    return f"There's already {a_or_an(item_name)} {item_name} in {category_name}."
 
 
 def get_live_category(sb, business_id: str, category_id) -> dict:
