@@ -1,0 +1,13 @@
+# Direct dependencies of backend/app, pinned. Python 3.13.
+fastapi==0.141.1
+uvicorn==0.48.0
+pydantic==2.13.4
+pydantic-settings==2.15.0
+supabase==2.31.0
+python-jose[cryptography]==3.5.0
+cryptography==49.0.0
+passlib==1.7.4
+# passlib 1.7.4 is broken with bcrypt>=4.1 (staff PIN hashing raises ValueError)
+bcrypt==4.0.1
+# zoneinfo needs this where the OS has no tz database (business_day.py)
+tzdata==2025.2
