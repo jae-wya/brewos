@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { queueApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { useCountUp } from '../hooks/useCountUp'
+import { keys } from '../lib/queryKeys'
 import { NavLink } from 'react-router-dom'
 
 function StatCard({ label, value, color, delay = 0 }: {
@@ -25,7 +26,7 @@ function StatCard({ label, value, color, delay = 0 }: {
 export default function DashboardPage() {
   const waking = useWakeState()
   const { data: stats, isLoading, isError, refetch } = useQuery({
-    queryKey: ['stats'],
+    queryKey: keys.stats,
     queryFn: queueApi.getStats,
     refetchInterval: 30_000,
     retry: 2,

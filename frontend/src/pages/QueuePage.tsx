@@ -4,6 +4,7 @@ import { queueApi, ordersApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
+import { keys, refreshOrders } from '../lib/queryKeys'
 
 const COLS = [
   { key: 'pending', label: 'Pending', next: 'brewing',   action: 'Start brewing', dotClass: 'dot-pending', color: 'var(--pending)' },
@@ -26,7 +27,7 @@ function KDSCard({ order, next, action, dotClass }: {
     onMutate: () => setFlipping(true),
     onSuccess: () => {
       setTimeout(() => {
-        qc.invalidateQueries({ queryKey: ['queue'] })
+        refreshOrders(qc)
         setFlipping(false)
       }, 280)
     },
@@ -96,7 +97,7 @@ export default function QueuePage() {
   const [activeTab, setActiveTab] = useState<string | null>(null)
 
   const { data: queue, isLoading, isError, refetch } = useQuery({
-    queryKey: ['queue'],
+    queryKey: keys.queue,
     queryFn: queueApi.getQueue,
     refetchInterval: 8_000,
     retry: 2,

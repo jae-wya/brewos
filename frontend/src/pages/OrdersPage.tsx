@@ -3,6 +3,7 @@ import { ordersApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
+import { keys, refreshOrders } from '../lib/queryKeys'
 import { NavLink } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 
@@ -19,7 +20,7 @@ function Row({ order, idx }: { order: Order, idx: number }) {
   const qc = useQueryClient()
   const markPaid = useMutation({
     mutationFn: () => ordersApi.markPaid(order.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] })
+    onSuccess: () => refreshOrders(qc)
   })
 
   return (
@@ -69,7 +70,7 @@ function Row({ order, idx }: { order: Order, idx: number }) {
 export default function OrdersPage() {
   const waking = useWakeState()
   const { data: orders = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ['orders'], queryFn: () => ordersApi.getOrders(), refetchInterval: 15_000, retry: 2,
+    queryKey: keys.orders, queryFn: () => ordersApi.getOrders(), refetchInterval: 15_000, retry: 2,
   })
 
   return (

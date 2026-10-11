@@ -71,10 +71,13 @@ export const authApi = {
 export const menuApi = {
   getMenu: () => api.get('/menu').then(r => r.data),
   getFullMenu: () => api.get('/menu', { params: { include_all: true } }).then(r => r.data),
-  toggleItem: (itemId: string) =>
-    api.patch(`/menu/items/${itemId}/toggle`).then(r => r.data),
-  toggleModifierOption: (optionId: string) =>
-    api.patch(`/menu/modifier-options/${optionId}/toggle`).then(r => r.data),
+  // Send the value we want, not "flip": a retried request then can't undo itself.
+  setItemAvailable: (itemId: string, isAvailable: boolean) =>
+    api.patch(`/menu/items/${itemId}/toggle`, { is_available: isAvailable })
+      .then(r => r.data as { id: string, is_available: boolean }),
+  setOptionAvailable: (optionId: string, isAvailable: boolean) =>
+    api.patch(`/menu/modifier-options/${optionId}/toggle`, { is_available: isAvailable })
+      .then(r => r.data as { id: string, is_available: boolean }),
 }
 
 export const ordersApi = {

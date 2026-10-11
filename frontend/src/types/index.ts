@@ -21,6 +21,7 @@ export interface ModifierOption {
   name: string
   price_delta: number
   sort_order: number
+  is_available: boolean
 }
 
 export interface Modifier {

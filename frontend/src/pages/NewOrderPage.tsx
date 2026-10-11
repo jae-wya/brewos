@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { menuApi, ordersApi, BUSINESS_ID } from '../lib/api'
 import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
 import OrderLine from '../components/orders/OrderLine'
+import { keys, refreshOrders } from '../lib/queryKeys'
 import { ChevronLeft, X, Check, Minus, Plus, Trash2 } from 'lucide-react'
 
 function ItemModal({ item, menuData, onAdd, onClose }: {
@@ -153,7 +154,7 @@ function SuccessOverlay({ orderNumber, onDone }: { orderNumber: string, onDone: 
 export default function NewOrderPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { data: menuData, isLoading } = useQuery<MenuData>({ queryKey: ['menu'], queryFn: menuApi.getMenu })
+  const { data: menuData, isLoading } = useQuery<MenuData>({ queryKey: keys.menu, queryFn: menuApi.getMenu })
 
   const [cart, setCart] = useState<CartItem[]>([])
   const [selItem, setSelItem] = useState<MenuItem | null>(null)
@@ -176,7 +177,7 @@ export default function NewOrderPage() {
       }))
     }),
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['orders', 'queue', 'stats'] })
+      refreshOrders(qc)
       setShowCart(false)
       setSuccessOrder(data.order_number)
     }

@@ -1,29 +1,26 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { menuApi } from '../lib/api'
-import { MenuData, MenuItem } from '../types'
+import { keys } from '../lib/queryKeys'
+import { useAvailabilityToggle } from '../hooks/useAvailabilityToggle'
+import { MenuData, MenuItem, Modifier, ModifierOption } from '../types'
 
-interface ModifierOption {
-  id: string
-  name: string
-  price_delta: number
-  is_available: boolean
+// Shown under a row whose switch failed and was put back.
+function ToggleError({ message, indent }: { message: string, indent: number }) {
+  return (
+    <p role="alert" style={{
+      padding: `6px 16px 8px ${indent}px`, fontSize: 11, color: 'var(--danger)',
+      background: 'var(--s1)', borderBottom: '1px solid var(--border)',
+    }}>
+      {message}
+    </p>
+  )
 }
 
-interface Modifier {
-  id: string
-  name: string
-  is_required: boolean
-  modifier_options: ModifierOption[]
-}
-
-function ModifierOptionRow({ option, modifierName }: { option: ModifierOption, modifierName: string }) {
-  const qc = useQueryClient()
-  const tog = useMutation({
-    mutationFn: () => menuApi.toggleModifierOption(option.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['menu'] })
-  })
+function ModifierOptionRow({ option }: { option: ModifierOption }) {
+  const tog = useAvailabilityToggle('option', option.id, option.name)
 
   return (
+    <>
     <div style={{
       display: 'flex', alignItems: 'center',
       padding: '9px 16px 9px 32px',
@@ -39,10 +36,11 @@ function ModifierOptionRow({ option, modifierName }: { option: ModifierOption, m
         )}
       </div>
       <button
-        onClick={() => tog.mutate()}
-        disabled={tog.isPending}
+        onClick={() => tog.set(!option.is_available)}
+        disabled={tog.busy}
         role="switch"
         aria-checked={option.is_available}
+        aria-busy={tog.busy}
         aria-label={`${option.is_available ? 'Disable' : 'Enable'} ${option.name} add-on`}
         className={`tog ${option.is_available ? 'tog-on' : 'tog-off'}`}
         style={{ marginLeft: 16, transform: 'scale(0.85)' }}
@@ -50,17 +48,15 @@ function ModifierOptionRow({ option, modifierName }: { option: ModifierOption, m
         <span className="tog-knob" />
       </button>
     </div>
+    {tog.error && <ToggleError message={tog.error} indent={32} />}
+    </>
   )
 }
 
 function MenuItemRow({ item, allModifiers, idx }: {
   item: MenuItem, allModifiers: Modifier[], idx: number
 }) {
-  const qc = useQueryClient()
-  const tog = useMutation({
-    mutationFn: () => menuApi.toggleItem(item.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['menu'] })
-  })
+  const tog = useAvailabilityToggle('item', item.id, item.name)
 
   // Get modifiers linked to this item — include ALL options (available + unavailable)
   const modIds = item.menu_item_modifiers.map((m: any) => m.modifier_id)
@@ -83,10 +79,11 @@ function MenuItemRow({ item, allModifiers, idx }: {
           </p>
         </div>
         <button
-          onClick={() => tog.mutate()}
-          disabled={tog.isPending}
+          onClick={() => tog.set(!item.is_available)}
+          disabled={tog.busy}
           role="switch"
           aria-checked={item.is_available}
+          aria-busy={tog.busy}
           aria-label={`${item.is_available ? 'Disable' : 'Enable'} ${item.name}`}
           className={`tog ${item.is_available ? 'tog-on' : 'tog-off'}`}
           style={{ marginLeft: 16 }}
@@ -94,6 +91,7 @@ function MenuItemRow({ item, allModifiers, idx }: {
           <span className="tog-knob" />
         </button>
       </div>
+      {tog.error && <ToggleError message={tog.error} indent={16} />}
 
       {/* Modifier options — indented under their item */}
       {itemMods.map(mod => (
@@ -114,7 +112,7 @@ function MenuItemRow({ item, allModifiers, idx }: {
           </div>
           {/* Each option */}
           {mod.modifier_options.map(opt => (
-            <ModifierOptionRow key={opt.id} option={opt} modifierName={mod.name} />
+            <ModifierOptionRow key={opt.id} option={opt} />
           ))}
         </div>
       ))}
@@ -129,7 +127,7 @@ function MenuItemRow({ item, allModifiers, idx }: {
 
 export default function MenuPage() {
   const { data: menuData, isLoading } = useQuery<MenuData>({
-    queryKey: ['menu-full'],
+    queryKey: keys.menuFull,
     queryFn: menuApi.getFullMenu,
   })
 
