@@ -7,7 +7,9 @@ class Settings(BaseSettings):
     supabase_service_key: str
     jwt_secret: str
     jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 480
+    # 30 days: one owner on her own phone shouldn't be logged out mid-shift.
+    # Override with JWT_EXPIRE_MINUTES. Lost phone -> rotate JWT_SECRET.
+    jwt_expire_minutes: int = 43200
     demo_business_id: str = "a0000000-0000-0000-0000-000000000001"
 
     class Config:

@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_supabase_admin
+from app.security import CurrentUser, require_owner
 
 router = APIRouter()
 
 
-@router.get("/{business_id}")
-async def get_menu(business_id: str, include_all: bool = False):
+@router.get("")
+async def get_menu(include_all: bool = False, user: CurrentUser = Depends(require_owner)):
     """Returns full menu with categories, items, and modifiers.
     include_all=true returns all modifier options including unavailable (for management UI).
     include_all=false (default) filters out unavailable options (for order-taking UI).
@@ -14,21 +15,21 @@ async def get_menu(business_id: str, include_all: bool = False):
 
     categories = supabase.table("categories")\
         .select("*")\
-        .eq("business_id", business_id)\
+        .eq("business_id", user.business_id)\
         .is_("deleted_at", None)\
         .order("sort_order")\
         .execute()
 
     items = supabase.table("menu_items")\
         .select("*, menu_item_modifiers(modifier_id)")\
-        .eq("business_id", business_id)\
+        .eq("business_id", user.business_id)\
         .is_("deleted_at", None)\
         .order("sort_order")\
         .execute()
 
     modifiers = supabase.table("modifiers")\
         .select("*, modifier_options(*)")\
-        .eq("business_id", business_id)\
+        .eq("business_id", user.business_id)\
         .is_("deleted_at", None)\
         .execute()
 
@@ -48,46 +49,51 @@ async def get_menu(business_id: str, include_all: bool = False):
     }
 
 
-@router.patch("/{business_id}/items/{item_id}/toggle")
-async def toggle_item(business_id: str, item_id: str):
+@router.patch("/items/{item_id}/toggle")
+async def toggle_item(item_id: str, user: CurrentUser = Depends(require_owner)):
     """Toggle item availability."""
     supabase = get_supabase_admin()
 
     item = supabase.table("menu_items")\
         .select("is_available")\
         .eq("id", item_id)\
-        .eq("business_id", business_id)\
-        .single()\
+        .eq("business_id", user.business_id)\
+        .is_("deleted_at", None)\
+        .limit(1)\
         .execute()
 
     if not item.data:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(status_code=404, detail="That item no longer exists.")
 
     updated = supabase.table("menu_items")\
-        .update({"is_available": not item.data["is_available"]})\
+        .update({"is_available": not item.data[0]["is_available"]})\
         .eq("id", item_id)\
+        .eq("business_id", user.business_id)\
         .execute()
 
     return updated.data
 
 
-@router.patch("/{business_id}/modifier-options/{option_id}/toggle")
-async def toggle_modifier_option(business_id: str, option_id: str):
+@router.patch("/modifier-options/{option_id}/toggle")
+async def toggle_modifier_option(option_id: str, user: CurrentUser = Depends(require_owner)):
     """Toggle modifier option availability (e.g. Espresso Shot, Nacho Sauce)."""
     supabase = get_supabase_admin()
 
     result = supabase.table("modifier_options")\
         .select("is_available")\
         .eq("id", option_id)\
-        .single()\
+        .eq("business_id", user.business_id)\
+        .limit(1)\
         .execute()
 
     if not result.data:
-        raise HTTPException(status_code=404, detail="Option not found")
+        raise HTTPException(status_code=404, detail="That add-on no longer exists.")
 
+    new_value = not result.data[0]["is_available"]
     supabase.table("modifier_options")\
-        .update({"is_available": not result.data["is_available"]})\
+        .update({"is_available": new_value})\
         .eq("id", option_id)\
+        .eq("business_id", user.business_id)\
         .execute()
 
-    return {"id": option_id, "is_available": not result.data["is_available"]}
+    return {"id": option_id, "is_available": new_value}

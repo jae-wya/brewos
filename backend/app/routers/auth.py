@@ -46,32 +46,35 @@ async def owner_login(body: OwnerLoginRequest):
             "password": body.password
         })
     except Exception:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Wrong email or password.")
 
     user_id = res.user.id
 
-    staff = supabase.table("staff")\
+    res = supabase.table("staff")\
         .select("*")\
         .eq("auth_user_id", user_id)\
         .eq("role", "owner")\
-        .single()\
+        .eq("is_active", True)\
+        .is_("deleted_at", None)\
+        .limit(1)\
         .execute()
 
-    if not staff.data:
-        raise HTTPException(status_code=403, detail="Not an owner account")
+    if not res.data:
+        raise HTTPException(status_code=403, detail="This account isn't set up as a café owner.")
+    staff = res.data[0]
 
     token = create_token({
         "sub": str(user_id),
-        "staff_id": staff.data["id"],
-        "business_id": staff.data["business_id"],
-        "role": staff.data["role"],
+        "staff_id": staff["id"],
+        "business_id": staff["business_id"],
+        "role": staff["role"],
     })
 
     return TokenResponse(
         access_token=token,
-        role=staff.data["role"],
-        display_name=staff.data["display_name"],
-        business_id=staff.data["business_id"]
+        role=staff["role"],
+        display_name=staff["display_name"],
+        business_id=staff["business_id"]
     )
 
 

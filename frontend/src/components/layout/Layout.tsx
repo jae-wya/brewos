@@ -1,6 +1,8 @@
-import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon } from 'lucide-react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon, LogOut } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
+import { clearSession } from '../../lib/session'
 
 const nav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dash'   },
@@ -11,6 +13,14 @@ const nav = [
 
 export default function Layout() {
   const { theme, toggle } = useTheme()
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+
+  function logOut() {
+    clearSession()
+    qc.clear()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -47,6 +57,9 @@ export default function Layout() {
           <button onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
             className="icon-btn" style={{ width: 36, height: 36 }}>
             {theme === 'dark' ? <Sun size={13} aria-hidden="true" /> : <Moon size={13} aria-hidden="true" />}
+          </button>
+          <button onClick={logOut} aria-label="Log out" className="icon-btn" style={{ width: 36, height: 36 }}>
+            <LogOut size={13} aria-hidden="true" />
           </button>
           <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '8px 16px', fontSize: 12 }}>
             <Plus size={12} strokeWidth={3} aria-hidden="true" />

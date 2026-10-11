@@ -1,5 +1,8 @@
 import axios from 'axios'
+import { getSession, clearSession } from './session'
 
+// Still used by the orders and queue routes, which haven't moved to the
+// token yet. Menu routes get business_id from the token on the server.
 export const BUSINESS_ID = 'a0000000-0000-0000-0000-000000000001'
 export const API_BASE = 'https://brewos-api.onrender.com'
 
@@ -21,8 +24,23 @@ api.interceptors.request.use(config => {
     _wakeListeners.forEach(fn => fn(true))
   }, 3000)
   ;(config as any)._wakeTimer = timer
+
+  const token = getSession()?.access_token
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
+
+// A 401 anywhere except the login call itself means the session is missing
+// or expired: drop it and go to the login screen, coming back here after.
+function handleUnauthorized(error: any) {
+  const isLoginCall = String(error.config?.url ?? '').startsWith('/auth/')
+  if (error.response?.status !== 401 || isLoginCall) return
+  clearSession()
+  if (window.location.pathname !== '/login') {
+    const next = encodeURIComponent(window.location.pathname + window.location.search)
+    window.location.assign(`/login?next=${next}`)
+  }
+}
 
 api.interceptors.response.use(
   response => {
@@ -33,17 +51,30 @@ api.interceptors.response.use(
   error => {
     clearTimeout((error.config as any)?._wakeTimer)
     if (_waking) { _waking = false; _wakeListeners.forEach(fn => fn(false)) }
+    handleUnauthorized(error)
     return Promise.reject(error)
   }
 )
 
+// The server's `detail` is written to be shown to her as-is.
+export function errorMessage(error: any, fallback = "Something went wrong. Please try again."): string {
+  if (!error?.response) return "Couldn't reach the server. Check your connection and try again."
+  const detail = error.response.data?.detail
+  return typeof detail === 'string' ? detail : fallback
+}
+
+export const authApi = {
+  ownerLogin: (email: string, password: string) =>
+    api.post('/auth/owner-login', { email, password }).then(r => r.data),
+}
+
 export const menuApi = {
-  getMenu: () => api.get(`/menu/${BUSINESS_ID}`).then(r => r.data),
-  getFullMenu: () => api.get(`/menu/${BUSINESS_ID}?include_all=true`).then(r => r.data),
+  getMenu: () => api.get('/menu').then(r => r.data),
+  getFullMenu: () => api.get('/menu', { params: { include_all: true } }).then(r => r.data),
   toggleItem: (itemId: string) =>
-    api.patch(`/menu/${BUSINESS_ID}/items/${itemId}/toggle`).then(r => r.data),
+    api.patch(`/menu/items/${itemId}/toggle`).then(r => r.data),
   toggleModifierOption: (optionId: string) =>
-    api.patch(`/menu/${BUSINESS_ID}/modifier-options/${optionId}/toggle`).then(r => r.data),
+    api.patch(`/menu/modifier-options/${optionId}/toggle`).then(r => r.data),
 }
 
 export const ordersApi = {
