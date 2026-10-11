@@ -84,6 +84,21 @@ in March, the February orders must still show February's price. This is why
 Most tables have `deleted_at`. Filter `WHERE deleted_at IS NULL` on every read
 unless you specifically want history.
 
+### Supabase clients
+
+supabase-py **mutates a client's auth state** on `sign_in_with_password`. A
+successful sign-in switches that client's `Authorization` header from the
+service-role key to the user's own token, so every later query on that
+client runs with the user's permissions, not the service role's.
+
+- **Always sign in on the anon-key client** (`get_supabase()`), and run
+  privileged reads on a **separate** service-role client
+  (`get_supabase_admin()`). Never call `sign_in_with_password` on the admin
+  client. See `owner_login` in `app/routers/auth.py`.
+- **Never grant `SELECT` on `staff` to the `authenticated` role**, even though
+  Postgres's 42501 error hint suggests exactly that. It would expose
+  `pin_hash` to any signed-in Supabase user.
+
 ## Constraints that shape the code
 
 **Free tier, deliberately.** Supabase and Render free tiers, no paid Claude API
