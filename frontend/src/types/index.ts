@@ -57,6 +57,7 @@ export interface OrderItemModifier {
 export interface OrderItem {
   id: string
   item_name: string
+  item_category: string | null
   unit_price: number
   quantity: number
   line_total: number
@@ -90,6 +91,7 @@ export interface QueueData {
 export interface CartItem {
   menu_item_id: string
   item_name: string
+  item_category: string | null
   // Base price + add-ons, for display only. The backend recomputes the real
   // price from the live menu; never send this to the API.
   estimated_unit_price: number

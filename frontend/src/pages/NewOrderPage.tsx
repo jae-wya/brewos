@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { menuApi, ordersApi, BUSINESS_ID } from '../lib/api'
 import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
+import OrderLine from '../components/orders/OrderLine'
 import { ChevronLeft, X, Check, Minus, Plus, Trash2 } from 'lucide-react'
 
 function ItemModal({ item, menuData, onAdd, onClose }: {
@@ -98,6 +99,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
                 if (canAdd) {
                   onAdd({
                     menu_item_id: item.id, item_name: item.name,
+                    item_category: menuData.categories.find(c => c.id === item.category_id)?.name ?? null,
                     estimated_unit_price: unit, quantity: qty, notes,
                     modifiers: Object.values(sel).map(o => ({
                       modifier_option_id: o.id, option_name: o.name, price_delta: o.price_delta
@@ -305,27 +307,21 @@ export default function NewOrderPage() {
               </div>
 
               {cart.map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{item.quantity}× {item.item_name}</p>
-                    {item.modifiers.length > 0 && (
-                      <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>
-                        {item.modifiers.map(m => m.option_name).join(' · ')}
-                      </p>
-                    )}
-                    {item.notes && <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>{item.notes}</p>}
-                  </div>
+                <OrderLine key={i}
+                  quantity={item.quantity} name={item.item_name} category={item.item_category}
+                  modifiers={item.modifiers.map(m => m.option_name)} notes={item.notes || null}
+                  trailing={
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 12 }}>
                     <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
                       &#8369;{(item.estimated_unit_price * item.quantity).toLocaleString()}
                     </span>
                     <button onClick={() => setCart(p => p.filter((_, j) => j !== i))}
-                      aria-label={`Remove ${item.item_name}`}
+                      aria-label={`Remove ${item.item_category ?? ''} ${item.item_name}`.trim()}
                       style={{ width: 'var(--touch)', height: 'var(--touch)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }}>
                       <Trash2 size={14} aria-hidden="true" />
                     </button>
                   </div>
-                </div>
+                } />
               ))}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '16px 0 14px' }}>

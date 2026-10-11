@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ordersApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
+import OrderLine from '../components/orders/OrderLine'
 import { NavLink } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 
@@ -39,11 +40,13 @@ function Row({ order, idx }: { order: Order, idx: number }) {
             {order.customer_name.toUpperCase()}
           </p>
         )}
-        <p style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 10, lineHeight: 1.6 }}>
-          {order.order_items.map((item, i) => (
-            <span key={i}>{item.quantity}× {item.item_name}{i < order.order_items.length - 1 ? ' · ' : ''}</span>
+        <div style={{ marginBottom: 10 }}>
+          {order.order_items.map(item => (
+            <OrderLine key={item.id}
+              quantity={item.quantity} name={item.item_name} category={item.item_category}
+              modifiers={item.order_item_modifiers.map(m => m.option_name)} notes={item.notes} />
           ))}
-        </p>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span className="data" style={{ fontSize: 18, fontWeight: 700, color: 'var(--t1)' }}>
             ₱{Number(order.total_amount).toLocaleString()}

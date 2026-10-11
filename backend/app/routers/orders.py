@@ -48,7 +48,7 @@ async def create_order(body: CreateOrderRequest):
     option_ids = list({m.modifier_option_id for i in body.items for m in i.modifiers})
 
     items_res = supabase.table("menu_items")\
-        .select("id, name, base_price")\
+        .select("id, name, base_price, categories(name)")\
         .eq("business_id", body.business_id)\
         .in_("id", item_ids)\
         .is_("deleted_at", None)\
@@ -114,6 +114,8 @@ async def create_order(body: CreateOrderRequest):
             "order_id": order_id,
             "menu_item_id": item.menu_item_id,
             "item_name": menu_item["name"],
+            # Snapshot, like item_name — distinguishes Hot vs Iced Spanish Latte
+            "item_category": (menu_item.get("categories") or {}).get("name"),
             "unit_price": unit_price,
             "quantity": item.quantity,
             "line_total": line_total,

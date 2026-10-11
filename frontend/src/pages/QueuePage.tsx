@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queueApi, ordersApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
+import OrderLine from '../components/orders/OrderLine'
 
 const COLS = [
   { key: 'pending', label: 'Pending', next: 'brewing',   action: 'Start brewing', dotClass: 'dot-pending', color: 'var(--pending)' },
@@ -68,19 +69,10 @@ function KDSCard({ order, next, action, dotClass }: {
                 {order.customer_name.toUpperCase()}
               </p>
             )}
-            {order.order_items.map((item, i) => (
-              <div key={i} className="kds-row">
-                <span className="data" style={{ fontSize: 11, color: 'var(--t3)', flexShrink: 0, minWidth: 16 }}>{item.quantity}×</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', lineHeight: 1.3 }}>{item.item_name}</p>
-                  {item.order_item_modifiers.length > 0 && (
-                    <p style={{ fontFamily: 'JetBrains Mono', fontSize: 8, color: 'var(--t3)', marginTop: 2 }}>
-                      {item.order_item_modifiers.map(m => m.option_name).join(' · ')}
-                    </p>
-                  )}
-                  {item.notes && <p style={{ fontSize: 10, color: 'var(--t2)', fontStyle: 'italic', marginTop: 2 }}>{item.notes}</p>}
-                </div>
-              </div>
+            {order.order_items.map(item => (
+              <OrderLine key={item.id} variant="queue"
+                quantity={item.quantity} name={item.item_name} category={item.item_category}
+                modifiers={item.order_item_modifiers.map(m => m.option_name)} notes={item.notes} />
             ))}
             <button
               onClick={() => advance.mutate()}
