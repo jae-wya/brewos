@@ -98,7 +98,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
                 if (canAdd) {
                   onAdd({
                     menu_item_id: item.id, item_name: item.name,
-                    unit_price: unit, quantity: qty, notes,
+                    estimated_unit_price: unit, quantity: qty, notes,
                     modifiers: Object.values(sel).map(o => ({
                       modifier_option_id: o.id, option_name: o.name, price_delta: o.price_delta
                     }))
@@ -166,10 +166,11 @@ export default function NewOrderPage() {
     mutationFn: () => ordersApi.createOrder({
       business_id: BUSINESS_ID, source: src,
       customer_name: name || null, payment_method: pay,
+      // Only IDs and quantities — the backend looks up prices and names
       items: cart.map(i => ({
-        menu_item_id: i.menu_item_id, item_name: i.item_name,
-        unit_price: i.unit_price, quantity: i.quantity,
-        notes: i.notes || null, modifiers: i.modifiers
+        menu_item_id: i.menu_item_id, quantity: i.quantity,
+        notes: i.notes || null,
+        modifiers: i.modifiers.map(m => ({ modifier_option_id: m.modifier_option_id }))
       }))
     }),
     onSuccess: (data) => {
@@ -179,7 +180,7 @@ export default function NewOrderPage() {
     }
   })
 
-  const total = cart.reduce((s, i) => s + i.unit_price * i.quantity, 0)
+  const total = cart.reduce((s, i) => s + i.estimated_unit_price * i.quantity, 0)
   const count = cart.reduce((s, i) => s + i.quantity, 0)
   const cats = menuData?.categories ?? []
   const items = menuData?.items ?? []
@@ -316,7 +317,7 @@ export default function NewOrderPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 12 }}>
                     <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
-                      &#8369;{(item.unit_price * item.quantity).toLocaleString()}
+                      &#8369;{(item.estimated_unit_price * item.quantity).toLocaleString()}
                     </span>
                     <button onClick={() => setCart(p => p.filter((_, j) => j !== i))}
                       aria-label={`Remove ${item.item_name}`}

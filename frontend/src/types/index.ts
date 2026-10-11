@@ -90,7 +90,9 @@ export interface QueueData {
 export interface CartItem {
   menu_item_id: string
   item_name: string
-  unit_price: number
+  // Base price + add-ons, for display only. The backend recomputes the real
+  // price from the live menu; never send this to the API.
+  estimated_unit_price: number
   quantity: number
   notes: string
   modifiers: {
