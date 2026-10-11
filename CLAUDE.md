@@ -23,6 +23,25 @@ on an **Android phone**. Every design decision follows from that:
 - She must be able to change her own menu and prices without messaging Jae.
   Anything that forces her to ask for help is a bug, not a missing feature.
 
+### Accounts
+
+Glimpse of Del has **two owner accounts**, both `staff` rows with
+`role = 'owner'` and the same `business_id`:
+
+- **Hers** — for running the café. Created at handover.
+- **Jae (support)** — Jae's, for support and diagnostics on the retainer, so
+  he never needs her password.
+
+Both have **full access**: menu, orders and sales. The support account must
+be disclosed to her **in writing at handover**, including how to disable it:
+set `is_active = false` on its `staff` row. That takes effect on the next
+request — `app/security.py` re-reads the staff row on every request rather
+than trusting the 30-day token — so disabling it is immediate, not "within
+30 days". Never remove that per-request check; it is also what will cut off
+staff accounts once they exist.
+
+Nothing in the code may assume a business has exactly one owner.
+
 ## Design system — "Night Market"
 
 | | |
