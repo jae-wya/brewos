@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from app.database import get_supabase_admin
+from app.business_day import get_business_tz, local_today, day_bounds
 
 router = APIRouter()
 
@@ -31,13 +32,15 @@ async def get_today_stats(business_id: str):
     """Basic today stats for the dashboard."""
     supabase = get_supabase_admin()
 
-    from datetime import datetime, timezone
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    tz = get_business_tz(supabase, business_id)
+    today = local_today(tz)
+    start, end = day_bounds(tz, today)
 
     res = supabase.table("orders")\
         .select("total_amount, status, payment_status")\
         .eq("business_id", business_id)\
-        .gte("created_at", f"{today}T00:00:00")\
+        .gte("created_at", start)\
+        .lt("created_at", end)\
         .is_("deleted_at", None)\
         .execute()
 
@@ -50,7 +53,8 @@ async def get_today_stats(business_id: str):
     )
 
     return {
-        "date": today,
+        "date": today.isoformat(),
+        "timezone": tz.key,
         "total_orders": total_orders,
         "completed_orders": len(completed),
         "total_revenue": total_revenue,

@@ -31,9 +31,13 @@ export default function DashboardPage() {
     retry: 2,
   })
 
-  const hour = new Date().getHours()
+  // Use the café's timezone (from the backend) so the header matches the day
+  // the stats were counted for. Falls back to the phone's zone until loaded.
+  const timeZone: string | undefined = stats?.timezone
+  const now = new Date()
+  const hour = Number(now.toLocaleString('en-PH', { hour: 'numeric', hourCycle: 'h23', timeZone }))
   const shift = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening'
-  const date = new Date().toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })
+  const date = now.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', timeZone })
 
   return (
     <div className="page-enter" style={{ padding: '20px 16px 28px', maxWidth: 480, margin: '0 auto' }}>
