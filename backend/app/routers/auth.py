@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 from app.config import get_settings
-from app.database import get_supabase_admin
+from app.database import get_supabase, get_supabase_admin
 
 router = APIRouter()
 settings = get_settings()
@@ -39,9 +39,12 @@ def create_token(data: dict) -> str:
 # --- Routes ---
 @router.post("/owner-login", response_model=TokenResponse)
 async def owner_login(body: OwnerLoginRequest):
-    supabase = get_supabase_admin()
+    # Sign in on its own anon-key client. supabase-py swaps a client's
+    # Authorization header to the user's token on SIGNED_IN, so signing in on
+    # the service-role client would make the staff query below run as
+    # `authenticated` and fail with 42501 permission denied.
     try:
-        res = supabase.auth.sign_in_with_password({
+        res = get_supabase().auth.sign_in_with_password({
             "email": body.email,
             "password": body.password
         })
@@ -50,7 +53,7 @@ async def owner_login(body: OwnerLoginRequest):
 
     user_id = res.user.id
 
-    res = supabase.table("staff")\
+    res = get_supabase_admin().table("staff")\
         .select("*")\
         .eq("auth_user_id", user_id)\
         .eq("role", "owner")\
