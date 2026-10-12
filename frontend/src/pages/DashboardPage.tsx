@@ -3,6 +3,7 @@ import { queueApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { useCountUp } from '../hooks/useCountUp'
 import { keys } from '../lib/queryKeys'
+import { peso } from '../lib/composer'
 import { NavLink } from 'react-router-dom'
 
 function StatCard({ label, value, color, delay = 0 }: {
@@ -95,7 +96,7 @@ export default function DashboardPage() {
           }}>
             <span className="label" style={{ color: 'var(--accent-lo)' }}>Revenue today</span>
             <div className="data" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', marginTop: 8, lineHeight: 1 }}>
-              &#8369;{Number(stats?.total_revenue ?? 0).toLocaleString()}
+              {peso(Number(stats?.total_revenue ?? 0))}
             </div>
             <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginTop: 10 }}>
               Daily sales &rarr;

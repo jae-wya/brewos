@@ -75,7 +75,8 @@ export default function Layout() {
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
         {nav.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} aria-label={label}
+          // end: /orders must not light up while on /orders/new (a New order screen).
+          <NavLink key={to} to={to} end aria-label={label}
             style={({ isActive }) => ({
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: 2,
