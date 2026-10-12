@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from app.database import get_supabase_admin
 from app.business_day import get_business_tz, local_today, day_bounds
 from app.security import CurrentUser, require_owner
+from app.routers.sales import paid_orders, revenue_of
 
 router = APIRouter()
 
@@ -50,16 +51,17 @@ async def get_today_stats(user: CurrentUser = Depends(require_owner)):
     orders = res.data
     total_orders = len(orders)
     completed = [o for o in orders if o["status"] == "picked_up"]
-    total_revenue = sum(
-        float(o["total_amount"]) for o in completed
-        if o["payment_status"] == "paid"
-    )
+
+    # Revenue by the same rule as GET /sales (paid, not cancelled, on the day
+    # it was paid), so the dashboard and the sales page can't disagree.
+    total_revenue = revenue_of(paid_orders(supabase, user.business_id, start, end, "total_amount"))
 
     return {
         "date": today.isoformat(),
         "timezone": tz.key,
         "total_orders": total_orders,
         "completed_orders": len(completed),
-        "total_revenue": total_revenue,
+        "cancelled_orders": len([o for o in orders if o["status"] == "cancelled"]),
+        "total_revenue": float(total_revenue),
         "active_orders": len([o for o in orders if o["status"] in ACTIVE_STATUSES])
     }
