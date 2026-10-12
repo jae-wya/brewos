@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -8,60 +8,8 @@ import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
 import { offeredItems, offeredModifiers } from '../lib/orderScreen'
 import { fillTemplate, peso } from '../lib/composer'
-import { ChevronLeft, ChevronRight, X, Check, Minus, Plus, Trash2, Copy } from 'lucide-react'
-
-// Category tabs, pinned just above the cart bar: she switches category
-// constantly, one-handed, so they sit where the thumb is rather than at the
-// top. Thirteen categories don't fit a phone, so the bar scrolls — and says
-// so: a fade with a chevron on whichever edge hides more tabs (before, "Tea"
-// was simply cut off mid-word). Choosing a tab scrolls it into view.
-function CategoryBar({ cats, active, onPick }: {
-  cats: { id: string, name: string }[], active: string | undefined, onPick: (id: string) => void
-}) {
-  const bar = useRef<HTMLDivElement>(null)
-  const [more, setMore] = useState({ left: false, right: false })
-  const measure = () => {
-    const el = bar.current
-    if (!el) return
-    setMore({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 })
-  }
-  useEffect(() => {
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [cats.length])
-  useEffect(() => {
-    bar.current?.querySelector<HTMLElement>('[aria-selected="true"]')
-      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
-  }, [active])
-
-  const fade = (side: 'left' | 'right') => (
-    <div aria-hidden="true" style={{
-      position: 'absolute', top: 0, bottom: 0, [side]: 0, width: 44, pointerEvents: 'none',
-      display: 'flex', alignItems: 'center', justifyContent: side === 'right' ? 'flex-end' : 'flex-start',
-      padding: '0 4px', color: 'var(--t2)',
-      background: `linear-gradient(to ${side}, transparent, var(--s1) 60%)`,
-    }}>
-      {side === 'right' ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-    </div>
-  )
-
-  return (
-    <div style={{ position: 'relative', background: 'var(--s1)', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-      <div ref={bar} onScroll={measure} className="scrollbar-none" role="tablist" aria-label="Menu categories"
-        style={{ padding: '8px 14px 10px', display: 'flex', gap: 8, overflowX: 'auto', scrollPaddingInline: 44 }}>
-        {cats.map(c => (
-          <button key={c.id} onClick={() => onPick(c.id)} role="tab" aria-selected={active === c.id}
-            className={`chip flex-shrink-0 ${active === c.id ? 'chip-on' : ''}`}>
-            {c.name}
-          </button>
-        ))}
-      </div>
-      {more.left && fade('left')}
-      {more.right && fade('right')}
-    </div>
-  )
-}
+import { ChevronLeft, X, Check, Minus, Plus, Trash2, Copy } from 'lucide-react'
+import CategoryBar from '../components/CategoryBar'
 
 const PAY_METHODS: [string, string][] = [['cash', 'Cash'], ['gcash', 'GCash'], ['maya', 'Maya'], ['card', 'Card']]
 
@@ -347,7 +295,11 @@ export default function NewOrderPage() {
         </div>
       </div>
 
-      <CategoryBar cats={cats} active={cat} onPick={setActiveCat} />
+      {/* Category tabs, pinned just above the cart bar: she switches
+          category constantly, one-handed, so they sit where the thumb is. */}
+      <div style={{ flexShrink: 0 }}>
+        <CategoryBar kind="tabs" label="Menu categories" cats={cats} active={cat} onPick={setActiveCat} />
+      </div>
 
       {/* Cart bar */}
       {count > 0 && !showCart && (

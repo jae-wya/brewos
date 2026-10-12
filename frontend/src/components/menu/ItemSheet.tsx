@@ -85,7 +85,7 @@ export default function ItemSheet({ menu, item, categoryId, draft, error: initia
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <span className="display" style={{ fontSize: 26, color: 'var(--t1)' }}>{item ? 'EDIT ITEM' : 'NEW ITEM'}</span>
-          <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
+          <button onClick={onClose} aria-label="Close" className="icon-btn">
             <X size={13} aria-hidden="true" />
           </button>
         </div>
@@ -110,7 +110,7 @@ export default function ItemSheet({ menu, item, categoryId, draft, error: initia
           <div style={{ marginBottom: 18 }}>
             <p className="label" style={{ marginBottom: 10 }}>Category</p>
             <div className="scrollbar-none" role="radiogroup" aria-label="Category"
-              style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '0 -16px', padding: '0 16px' }}>
+              style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '0 -16px', padding: '0 16px' }}>
               {menu.categories.map(c => (
                 <button key={c.id} onClick={() => pickCategory(c.id)} role="radio" aria-checked={catId === c.id}
                   className={`chip flex-shrink-0 ${catId === c.id ? 'chip-on' : ''}`}>
@@ -126,10 +126,10 @@ export default function ItemSheet({ menu, item, categoryId, draft, error: initia
               {menu.modifiers.map(m => {
                 const on = modIds.includes(m.id)
                 return (
-                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', minHeight: 'var(--touch)', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', minHeight: 56, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{m.name}</p>
-                      <p style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p style={{ fontSize: 12, color: 'var(--t2)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {m.modifier_options.map(o => o.name).join(', ')}
                       </p>
                     </div>
