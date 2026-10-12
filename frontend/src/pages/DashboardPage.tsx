@@ -1,27 +1,35 @@
 import { useQuery } from '@tanstack/react-query'
+import { NavLink } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import { queueApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { useCountUp } from '../hooks/useCountUp'
 import { keys } from '../lib/queryKeys'
 import { peso } from '../lib/composer'
-import { NavLink } from 'react-router-dom'
 
-function StatCard({ label, value, color, delay = 0 }: {
-  label: string, value: number, color: string, delay?: number
+// The first screen she sees on every open: the stall's sign for the day,
+// hand-lettered on one lit plate — the kind of board a stall hangs out
+// front — rather than a grid of stat tiles. Each line is a short sentence;
+// the figures are lit. The two lines that lead somewhere are links: takings
+// to Daily sales, the rail to the Queue (the same "rail" the chits hang on).
+
+function SignLine({ figure, words, color, to, label }: {
+  figure: string, words: string, color: string, to?: string, label?: string
 }) {
-  const animated = useCountUp(value, 900)
-  return (
-    <div className="panel page-enter-child" style={{
-      padding: '16px',
-      animationDelay: `${delay}ms`,
-      display: 'flex', flexDirection: 'column', gap: 8,
-    }}>
-      <span className="label">{label}</span>
-      <span className="data" style={{ fontSize: 36, fontWeight: 700, color, lineHeight: 1 }}>
-        {animated}
-      </span>
-    </div>
+  const body = (
+    <>
+      <span className="display" style={{ fontSize: 48, color, lineHeight: 0.9 }}>{figure}</span>
+      <span className="display" style={{ fontSize: 26, color: 'var(--t1)', lineHeight: 1, marginLeft: 10, letterSpacing: '0.03em' }}>{words}</span>
+      {to && <ChevronRight size={20} aria-hidden="true" style={{ marginLeft: 'auto', color: 'var(--t2)', flexShrink: 0 }} />}
+    </>
   )
+  const style = {
+    display: 'flex', alignItems: 'baseline', minHeight: 64, padding: '12px 0',
+    borderTop: '1px solid var(--border)', textDecoration: 'none',
+  } as const
+  return to
+    ? <NavLink to={to} aria-label={label} style={{ ...style, alignItems: 'center' }}>{body}</NavLink>
+    : <p style={style}>{body}</p>
 }
 
 export default function DashboardPage() {
@@ -32,19 +40,22 @@ export default function DashboardPage() {
     refetchInterval: 30_000,
     retry: 2,
   })
+  const orders = useCountUp(stats?.total_orders ?? 0, 900)
+  const onRail = useCountUp(stats?.active_orders ?? 0, 900)
 
-  // Use the café's timezone (from the backend) so the header matches the day
-  // the stats were counted for. Falls back to the phone's zone until loaded.
+  // The café's timezone (from the backend), so the day named on the sign is
+  // the day the stats were counted for. The phone's zone until loaded.
   const timeZone: string | undefined = stats?.timezone
   const now = new Date()
   const hour = Number(now.toLocaleString('en-PH', { hour: 'numeric', hourCycle: 'h23', timeZone }))
   const shift = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening'
-  const date = now.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', timeZone })
+  const day = now.toLocaleDateString('en-PH', { weekday: 'long', timeZone })
+  const date = now.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone })
+  const takings = peso(Number(stats?.total_revenue ?? 0))
 
   return (
     <div className="page-enter" style={{ padding: '20px 16px 28px', maxWidth: 480, margin: '0 auto' }}>
 
-      {/* Wake banner */}
       {waking && (
         <div className="wake-banner" style={{
           display: 'flex', alignItems: 'center', gap: 8,
@@ -53,69 +64,47 @@ export default function DashboardPage() {
           borderRadius: 'var(--r)',
         }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', animation: 'pulse 1s infinite' }} />
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.06em' }}>
             WAKING SERVER UP···
           </span>
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', letterSpacing: '0.1em', marginBottom: 8 }}>
-          {date.toUpperCase()} · {shift.toUpperCase()} SHIFT
-        </p>
-        <h1 className="display" style={{ fontSize: 52, color: 'var(--t1)' }}>
-          TODAY'S<br />OVERVIEW
-        </h1>
-      </div>
-
-      {/* Error */}
       {isError && (
         <div style={{ padding: '12px 16px', marginBottom: 16, background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--danger)' }}>COULDN'T REACH SERVER</span>
-          <button onClick={() => refetch()} className="btn btn-danger" style={{ padding: '6px 14px', fontSize: 11 }}>Retry</button>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--danger)' }}>COULDN'T REACH SERVER</span>
+          <button onClick={() => refetch()} className="btn btn-danger" style={{ fontSize: 12 }}>Retry</button>
         </div>
       )}
 
-      {/* Stats grid */}
-      {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-          {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 88 }} />)}
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-          <StatCard label="Active now"   value={stats?.active_orders    ?? 0} color="var(--pending)" delay={0}   />
-          <StatCard label="Orders today" value={stats?.total_orders      ?? 0} color="var(--t1)"     delay={80}  />
-          <StatCard label="Completed"    value={stats?.completed_orders  ?? 0} color="var(--ready)"  delay={160} />
-          <StatCard label="Cancelled"    value={stats?.cancelled_orders  ?? 0} color="var(--t2)"     delay={200} />
-          {/* Revenue — full width; opens the day's breakdown on /sales */}
-          <NavLink to="/sales" aria-label="Revenue today — open daily sales" className="panel page-enter-child" style={{
-            gridColumn: '1 / -1', padding: '16px', animationDelay: '260ms',
-            background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)',
-            display: 'block', textDecoration: 'none',
-          }}>
-            <span className="label" style={{ color: 'var(--accent)' }}>Revenue today</span>
-            <div className="data" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', marginTop: 8, lineHeight: 1 }}>
-              {peso(Number(stats?.total_revenue ?? 0))}
-            </div>
-            <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginTop: 10 }}>
-              Daily sales &rarr;
-            </span>
-          </NavLink>
-        </div>
-      )}
+      {/* The sign */}
+      <section className="panel" aria-label="Today so far" style={{ padding: '18px 18px 6px', marginBottom: 20 }}>
+        <p className="data" style={{ fontSize: 11, color: 'var(--t2)', letterSpacing: '0.1em' }}>
+          {date.toUpperCase()}
+        </p>
+        <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 1, margin: '4px 0 12px', letterSpacing: '0.02em' }}>
+          {day} · {shift}
+        </h1>
+        {isLoading ? (
+          [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 52, marginBottom: 12 }} />)
+        ) : (
+          <>
+            <SignLine figure={String(orders)} words={orders === 1 ? 'order' : 'orders'} color="var(--accent)" />
+            <SignLine figure={takings} words="taken" color="var(--accent)" to="/sales"
+              label={`${takings} taken today — open daily sales`} />
+            <SignLine figure={String(onRail)} words="on the rail" color="var(--pending)" to="/queue"
+              label={`${onRail} ${onRail === 1 ? 'order' : 'orders'} on the rail — open the queue`} />
+            <p className="data" style={{ fontSize: 12, color: 'var(--t2)', padding: '10px 0 12px', borderTop: '1px solid var(--border)' }}>
+              {stats?.completed_orders ?? 0} done · {stats?.cancelled_orders ?? 0} cancelled
+            </p>
+          </>
+        )}
+      </section>
 
-      {/* CTAs */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <NavLink to="/orders/new" className="btn btn-fire page-enter-child"
-          style={{ width: '100%', padding: '16px', fontSize: 15, animationDelay: '300ms' }}>
-          Take an order
-        </NavLink>
-        <NavLink to="/queue" className="btn btn-ghost page-enter-child"
-          style={{ width: '100%', padding: '16px', fontSize: 15, animationDelay: '360ms' }}>
-          View queue
-        </NavLink>
-      </div>
+      <NavLink to="/orders/new" className="btn btn-fire"
+        style={{ width: '100%', minHeight: 56, fontSize: 16 }}>
+        Take an order
+      </NavLink>
     </div>
   )
 }
