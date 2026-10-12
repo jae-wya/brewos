@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { menuApi, ordersApi, errorMessage } from '../lib/api'
@@ -25,9 +26,11 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
   const unit = item.base_price + extra
   const canAdd = mods.filter(m => m.is_required).every(m => sel[m.id])
 
-  return (
+  // Portalled to <body> at zIndex 110, like the Menu page's ItemSheet: at 60
+  // the sticky header and nav (100) drew over it and Add sat against the nav.
+  return createPortal(
     <div onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 480,
@@ -127,7 +130,8 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -290,10 +294,11 @@ export default function NewOrderPage() {
           onAdd={i => setCart(p => [...p, i])} onClose={() => setSelItem(null)} />
       )}
 
-      {/* Cart sheet */}
-      {showCart && (
+      {/* Cart sheet. Portalled at zIndex 110 like ItemSheet: at 60 the nav (100)
+          drew over its bottom and Place order sat flush against it. */}
+      {showCart && createPortal(
         <div role="dialog" aria-modal="true" aria-label="Order summary"
-          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div style={{
             width: '100%', maxWidth: 480,
             background: 'var(--s1)',
@@ -379,7 +384,8 @@ export default function NewOrderPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
