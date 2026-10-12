@@ -49,10 +49,10 @@ export default function Layout() {
 
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-            className="icon-btn" style={{ width: 36, height: 36 }}>
+            className="icon-btn">
             {theme === 'dark' ? <Sun size={13} aria-hidden="true" /> : <Moon size={13} aria-hidden="true" />}
           </button>
-          <NavLink to="/settings" aria-label="Settings" className="icon-btn" style={{ width: 36, height: 36 }}>
+          <NavLink to="/settings" aria-label="Settings" className="icon-btn">
             <Settings size={13} aria-hidden="true" />
           </NavLink>
           <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '8px 12px', fontSize: 12 }}>

@@ -50,18 +50,26 @@
   --s3:        #EAE0D4;
   --border:    #DDD0C0;
   --border-hi: #C8B8A0;
+  /* Gradient ends: fills only (primary buttons, logo). #D65120, not
+     #D45020, so dark button text clears 4.5:1 at the darker end. */
   --accent-a:  #E8800A;
-  --accent-b:  #D45020;
-  --accent:    #E8800A;
+  --accent-b:  #D65120;
+  /* Accent as TEXT (prices, links, selected chips). #E8800A was 2.8:1 on
+     white; this is the brightest tungsten-hue orange at 4.5:1 on every
+     light surface (4.53 worst, 5.9 on white). */
+  --accent:    #975307;
   --accent-lo: #7A4008;
   --accent-bg: rgba(232,128,10,0.07);
   --t1:        #1A1208;
   --t2:        #6A5848;
   --t3:        #9A8878;
-  --pending:   #D07000;
-  --brewing:   #0090C0;
-  --ready:     #008850;
-  --danger:    #CC2020;
+  /* Status colours as text: each the nearest shade of its own hue at 4.5:1
+     on every light surface (were 2.7-4.3). Pending matches accent, as in
+     the dark theme. */
+  --pending:   #975307;
+  --brewing:   #006A88;
+  --ready:     #00703F;
+  --danger:    #B81C1C;
 }
 
 /* ─── Base ─── */
@@ -105,7 +113,7 @@
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--t3);
+    color: var(--t2);
   }
 }
 
@@ -163,7 +171,7 @@
     white-space: nowrap;
     text-decoration: none;
     line-height: 1;
-    min-height: 40px;
+    min-height: var(--touch);
   }
   .btn:active:not(:disabled) { transform: scale(0.96); }
   .btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -259,7 +267,7 @@
   .chip {
     display: inline-flex;
     align-items: center;
-    padding: 7px 14px;
+    padding: 0 16px;
     border-radius: var(--pill);
     font-family: 'Figtree', sans-serif;
     font-size: 12px;
@@ -270,12 +278,17 @@
     cursor: pointer;
     transition: all 0.12s;
     white-space: nowrap;
-    min-height: 36px;
+    min-height: var(--touch);
   }
+  /* Selected: an accent outline and accent text on a faint tint. The
+     tungsten gradient is reserved for the primary action — a selected chip
+     in gradient read as one more button to press. */
   .chip-on {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    border-color: transparent;
-    color: #14100C;
+    background: var(--accent-bg);
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    color: var(--accent);
+    font-weight: 700;
   }
   .chip:not(.chip-on):hover { border-color: var(--border-hi); color: var(--t1); }
 
@@ -298,7 +311,7 @@
     position: absolute;
     inset: -9px -4px;
   }
-  .tog-on  { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); }
+  .tog-on  { background: var(--accent); } /* state, not an action: no gradient */
   .tog-off { background: var(--s3); border: 1px solid var(--border-hi); }
   .tog-knob {
     position: absolute;
