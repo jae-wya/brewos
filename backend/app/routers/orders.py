@@ -1,11 +1,17 @@
-from fastapi import APIRouter, HTTPException
+"""Orders: create, list, advance status, mark paid.
+
+business_id comes only from the token (app/security.py), never from the
+path or body, and scopes every query here — same rule as the menu routes.
+"""
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from app.database import get_supabase_admin
-from app.config import get_settings
+from app.security import CurrentUser, require_owner
 
 router = APIRouter()
-settings = get_settings()
 
 
 # --- Models ---
@@ -21,7 +27,8 @@ class OrderItemRequest(BaseModel):
     modifiers: List[ModifierSelection] = []
 
 class CreateOrderRequest(BaseModel):
-    business_id: str
+    # No business_id: it comes from the token. Unknown fields are ignored, so
+    # a phone still sending one (an old bundle) can't choose the business.
     source: str = "walk_in"
     customer_name: Optional[str] = None
     customer_contact: Optional[str] = None
@@ -84,8 +91,9 @@ def unavailable_options_message(option_rows: List[dict], carrying_items: List[di
 
 # --- Routes ---
 @router.post("/")
-async def create_order(body: CreateOrderRequest):
+async def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_owner)):
     supabase = get_supabase_admin()
+    biz = user.business_id
 
     if not body.items:
         raise HTTPException(status_code=400, detail="Order has no items")
@@ -98,7 +106,7 @@ async def create_order(body: CreateOrderRequest):
 
     items_res = supabase.table("menu_items")\
         .select("id, name, base_price, is_available, categories(name)")\
-        .eq("business_id", body.business_id)\
+        .eq("business_id", biz)\
         .in_("id", item_ids)\
         .is_("deleted_at", None)\
         .execute()
@@ -108,14 +116,14 @@ async def create_order(body: CreateOrderRequest):
     if option_ids:
         options_res = supabase.table("modifier_options")\
             .select("id, name, price_delta, is_available")\
-            .eq("business_id", body.business_id)\
+            .eq("business_id", biz)\
             .in_("id", option_ids)\
             .execute()
         options = {row["id"]: row for row in options_res.data}
 
     missing_items = [i for i in item_ids if i not in menu_items]
     if missing_items:
-        raise HTTPException(status_code=409, detail=missing_items_message(supabase, body.business_id, missing_items))
+        raise HTTPException(status_code=409, detail=missing_items_message(supabase, biz, missing_items))
     turned_off = [row for row in menu_items.values() if not row["is_available"]]
     if turned_off:
         raise HTTPException(status_code=409, detail=unavailable_items_message(turned_off))
@@ -141,13 +149,13 @@ async def create_order(body: CreateOrderRequest):
     # Generate order number
     order_num_res = supabase.rpc(
         "generate_order_number",
-        {"p_business_id": body.business_id}
+        {"p_business_id": biz}
     ).execute()
     order_number = order_num_res.data
 
     # Insert order
     order_res = supabase.table("orders").insert({
-        "business_id": body.business_id,
+        "business_id": biz,
         "order_number": order_number,
         "source": body.source,
         "customer_name": body.customer_name,
@@ -169,7 +177,7 @@ async def create_order(body: CreateOrderRequest):
     # Insert order items + modifiers
     for item, menu_item, unit_price, mods, line_total in lines:
         item_res = supabase.table("order_items").insert({
-            "business_id": body.business_id,
+            "business_id": biz,
             "order_id": order_id,
             "menu_item_id": item.menu_item_id,
             "item_name": menu_item["name"],
@@ -185,7 +193,7 @@ async def create_order(body: CreateOrderRequest):
             item_id = item_res.data[0]["id"]
             mod_rows = [
                 {
-                    "business_id": body.business_id,
+                    "business_id": biz,
                     "order_item_id": item_id,
                     "modifier_option_id": o["id"],
                     "option_name": o["name"],
@@ -198,13 +206,22 @@ async def create_order(body: CreateOrderRequest):
     return {"order": order, "order_number": order_number}
 
 
-@router.get("/{business_id}")
-async def get_orders(business_id: str, status: Optional[str] = None):
+def get_order(supabase, business_id: str, order_id: UUID) -> dict:
+    res = supabase.table("orders").select("id")\
+        .eq("business_id", business_id).eq("id", str(order_id))\
+        .is_("deleted_at", None).limit(1).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="That order no longer exists. Pull down to refresh.")
+    return res.data[0]
+
+
+@router.get("")
+async def get_orders(status: Optional[str] = None, user: CurrentUser = Depends(require_owner)):
     supabase = get_supabase_admin()
 
     query = supabase.table("orders")\
         .select("*, order_items(*, order_item_modifiers(*))")\
-        .eq("business_id", business_id)\
+        .eq("business_id", user.business_id)\
         .is_("deleted_at", None)\
         .order("created_at", desc=True)
 
@@ -215,32 +232,31 @@ async def get_orders(business_id: str, status: Optional[str] = None):
     return res.data
 
 
-@router.patch("/{business_id}/{order_id}/status")
-async def update_order_status(
-    business_id: str,
-    order_id: str,
-    body: UpdateOrderStatusRequest
-):
+@router.patch("/{order_id}/status")
+async def update_order_status(order_id: UUID, body: UpdateOrderStatusRequest,
+                              user: CurrentUser = Depends(require_owner)):
     valid = ["pending", "brewing", "ready", "picked_up", "cancelled"]
     if body.status not in valid:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid}")
 
     supabase = get_supabase_admin()
+    order = get_order(supabase, user.business_id, order_id)
     res = supabase.table("orders")\
         .update({"status": body.status})\
-        .eq("id", order_id)\
-        .eq("business_id", business_id)\
+        .eq("id", order["id"])\
+        .eq("business_id", user.business_id)\
         .execute()
 
     return res.data
 
 
-@router.patch("/{business_id}/{order_id}/payment")
-async def mark_paid(business_id: str, order_id: str):
+@router.patch("/{order_id}/payment")
+async def mark_paid(order_id: UUID, user: CurrentUser = Depends(require_owner)):
     supabase = get_supabase_admin()
+    order = get_order(supabase, user.business_id, order_id)
     res = supabase.table("orders")\
         .update({"payment_status": "paid"})\
-        .eq("id", order_id)\
-        .eq("business_id", business_id)\
+        .eq("id", order["id"])\
+        .eq("business_id", user.business_id)\
         .execute()
     return res.data

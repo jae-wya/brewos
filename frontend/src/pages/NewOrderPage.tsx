@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { menuApi, ordersApi, errorMessage, BUSINESS_ID } from '../lib/api'
+import { menuApi, ordersApi, errorMessage } from '../lib/api'
 import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
@@ -172,7 +172,7 @@ export default function NewOrderPage() {
 
   const place = useMutation({
     mutationFn: () => ordersApi.createOrder({
-      business_id: BUSINESS_ID, source: src,
+      source: src,
       customer_name: name || null, payment_method: pay,
       // Only IDs and quantities — the backend looks up prices and names
       items: cart.map(i => ({

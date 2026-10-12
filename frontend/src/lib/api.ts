@@ -2,9 +2,8 @@ import axios from 'axios'
 import { getSession, clearSession } from './session'
 import { MenuItem } from '../types'
 
-// Still used by the orders and queue routes, which haven't moved to the
-// token yet. Menu routes get business_id from the token on the server.
-export const BUSINESS_ID = 'a0000000-0000-0000-0000-000000000001'
+// No business id anywhere in the frontend: every route gets it from the
+// session token on the server (backend app/security.py).
 export const API_BASE = 'https://brewos-api.onrender.com'
 
 const api = axios.create({
@@ -99,16 +98,16 @@ export interface ItemFields {
 
 export const ordersApi = {
   getOrders: (status?: string) =>
-    api.get(`/orders/${BUSINESS_ID}`, { params: status ? { status } : {} }).then(r => r.data),
+    api.get('/orders', { params: status ? { status } : {} }).then(r => r.data),
   createOrder: (data: object) =>
     api.post('/orders/', data).then(r => r.data),
   updateStatus: (orderId: string, status: string) =>
-    api.patch(`/orders/${BUSINESS_ID}/${orderId}/status`, { status }).then(r => r.data),
+    api.patch(`/orders/${orderId}/status`, { status }).then(r => r.data),
   markPaid: (orderId: string) =>
-    api.patch(`/orders/${BUSINESS_ID}/${orderId}/payment`).then(r => r.data),
+    api.patch(`/orders/${orderId}/payment`).then(r => r.data),
 }
 
 export const queueApi = {
-  getQueue: () => api.get(`/queue/${BUSINESS_ID}`).then(r => r.data),
-  getStats: () => api.get(`/queue/${BUSINESS_ID}/stats`).then(r => r.data),
+  getQueue: () => api.get('/queue').then(r => r.data),
+  getStats: () => api.get('/queue/stats').then(r => r.data),
 }

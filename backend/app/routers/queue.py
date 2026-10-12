@@ -1,19 +1,22 @@
-from fastapi import APIRouter
+"""Queue board and today's stats. business_id comes only from the token
+(app/security.py), never from the path."""
+from fastapi import APIRouter, Depends
 from app.database import get_supabase_admin
 from app.business_day import get_business_tz, local_today, day_bounds
+from app.security import CurrentUser, require_owner
 
 router = APIRouter()
 
 ACTIVE_STATUSES = ["pending", "brewing", "ready"]
 
-@router.get("/{business_id}")
-async def get_queue(business_id: str):
+@router.get("")
+async def get_queue(user: CurrentUser = Depends(require_owner)):
     """Returns all active orders for the queue board."""
     supabase = get_supabase_admin()
 
     res = supabase.table("orders")\
         .select("*, order_items(*, order_item_modifiers(*))")\
-        .eq("business_id", business_id)\
+        .eq("business_id", user.business_id)\
         .in_("status", ACTIVE_STATUSES)\
         .is_("deleted_at", None)\
         .order("created_at")\
@@ -27,18 +30,18 @@ async def get_queue(business_id: str):
     return queue
 
 
-@router.get("/{business_id}/stats")
-async def get_today_stats(business_id: str):
+@router.get("/stats")
+async def get_today_stats(user: CurrentUser = Depends(require_owner)):
     """Basic today stats for the dashboard."""
     supabase = get_supabase_admin()
 
-    tz = get_business_tz(supabase, business_id)
+    tz = get_business_tz(supabase, user.business_id)
     today = local_today(tz)
     start, end = day_bounds(tz, today)
 
     res = supabase.table("orders")\
         .select("total_amount, status, payment_status")\
-        .eq("business_id", business_id)\
+        .eq("business_id", user.business_id)\
         .gte("created_at", start)\
         .lt("created_at", end)\
         .is_("deleted_at", None)\
