@@ -70,6 +70,18 @@ def unavailable_items_message(rows: List[dict]) -> str:
     return f"{join_names(names)} are turned off right now. Turn them back on, or remove them from the cart."
 
 
+def unavailable_options_message(option_rows: List[dict], carrying_items: List[dict]) -> str:
+    """For add-ons she turned off since they were added to a cart item. The
+    add-on can't be removed on its own, so name the cart items that carry it:
+    "Oat Milk is turned off right now. Turn it back on, or remove Spanish
+    Latte (Iced Coffee) from the cart." """
+    options = join_names([row["name"] for row in option_rows])
+    items = join_names(list(dict.fromkeys(item_label(row) for row in carrying_items)))
+    if len(option_rows) == 1:
+        return f"{options} is turned off right now. Turn it back on, or remove {items} from the cart."
+    return f"{options} are turned off right now. Turn them back on, or remove {items} from the cart."
+
+
 # --- Routes ---
 @router.post("/")
 async def create_order(body: CreateOrderRequest):
@@ -95,7 +107,7 @@ async def create_order(body: CreateOrderRequest):
     options = {}
     if option_ids:
         options_res = supabase.table("modifier_options")\
-            .select("id, name, price_delta")\
+            .select("id, name, price_delta, is_available")\
             .eq("business_id", body.business_id)\
             .in_("id", option_ids)\
             .execute()
@@ -109,6 +121,12 @@ async def create_order(body: CreateOrderRequest):
         raise HTTPException(status_code=409, detail=unavailable_items_message(turned_off))
     if any(o not in options for o in option_ids):
         raise HTTPException(status_code=409, detail="An add-on in the cart is no longer on the menu. Remove that item and add it again.")
+    options_off = [row for row in options.values() if not row["is_available"]]
+    if options_off:
+        off_ids = {row["id"] for row in options_off}
+        carrying = [menu_items[i.menu_item_id] for i in body.items
+                    if any(m.modifier_option_id in off_ids for m in i.modifiers)]
+        raise HTTPException(status_code=409, detail=unavailable_options_message(options_off, carrying))
 
     lines = []
     for item in body.items:
