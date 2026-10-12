@@ -11,6 +11,10 @@ import { MenuData, MenuItem, Modifier, ModifierOption } from '../types'
 
 const UNDO_MS = 10_000
 
+// index.css cuts every animation to 0.01ms under reduced motion, which would
+// turn an endless pulse into flicker; those users get a steady dim instead.
+const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
 // Shown under a row whose switch failed and was put back.
 function ToggleError({ message, indent }: { message: string, indent: number }) {
   return (
@@ -138,11 +142,13 @@ function MenuItemRow({ item, allModifiers, idx, onOpen }: {
 
   return (
     <div style={{ animation: `childEnter 0.3s ${idx * 20}ms both` }}>
-      {/* Item row */}
-      <div style={{
+      {/* Item row. A new item still being saved pulses, so a tap that does
+          nothing yet reads as "not ready" rather than "broken". */}
+      <div aria-busy={placeholder || undefined} style={{
         display: 'flex', alignItems: 'center', padding: '6px 16px',
         borderBottom: itemMods.length > 0 || editing ? 'none' : '1px solid var(--border)',
-        opacity: on ? 1 : 0.4,
+        opacity: placeholder ? 0.5 : on ? 1 : 0.4,
+        animation: placeholder && !REDUCED_MOTION ? 'pulse 1.2s ease-in-out infinite' : undefined,
         transition: 'opacity 0.2s',
         background: 'var(--s1)',
       }}>
