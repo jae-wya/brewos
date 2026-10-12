@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { menuApi, errorMessage } from '../../lib/api'
@@ -70,9 +71,14 @@ export default function ItemSheet({ menu, item, categoryId, onClose, onDelete }:
     setModIds(ids => ids.includes(id) ? ids.filter(m => m !== id) : [...ids, id])
   }
 
-  return (
+  // Portalled to <body>: the Menu page's wrapper keeps a transform from its
+  // .page-enter animation, and a transformed ancestor turns position: fixed
+  // into "fixed to that element" — the panel landed at the bottom of the
+  // whole page, off-screen. Above the sticky header and nav (zIndex 100) so
+  // the nav can't cover Delete.
+  return createPortal(
     <div onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={item ? `Edit ${item.name}` : 'New item'}
         style={{
           width: '100%', maxWidth: 480,
@@ -170,6 +176,7 @@ export default function ItemSheet({ menu, item, categoryId, onClose, onDelete }:
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
