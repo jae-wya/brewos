@@ -31,13 +31,13 @@ function Row({ order, idx }: { order: Order, idx: number }) {
         {order.source === 'messenger' && (
           <span className="badge" style={{ background: 'rgba(0,212,255,0.08)', color: 'var(--brewing)' }}>DM</span>
         )}
-        <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)' }}>
+        <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>
           {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
       <div style={{ padding: '8px 14px 12px' }}>
         {order.customer_name && (
-          <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 6 }}>
+          <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, fontWeight: 700, color: 'var(--t2)', letterSpacing: '0.06em', marginBottom: 6 }}>
             {order.customer_name.toUpperCase()}
           </p>
         )}

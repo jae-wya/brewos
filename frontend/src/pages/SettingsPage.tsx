@@ -86,7 +86,7 @@ export default function SettingsPage() {
     <div className="page-enter" style={{ padding: '16px 16px 28px', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
         <NavLink to="/dashboard" aria-label="Back to dashboard"
-          style={{ color: 'var(--t2)', display: 'flex', padding: '10px 8px 10px 0' }}>
+          style={{ color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, marginLeft: -12, flexShrink: 0 }}>
           <ChevronLeft size={18} aria-hidden="true" />
         </NavLink>
         <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95 }}>SETTINGS</h1>
@@ -116,11 +116,11 @@ export default function SettingsPage() {
           </div>
 
           <label htmlFor="template" className="label" style={{ display: 'block', marginBottom: 6 }}>Payment message</label>
-          <p style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 10 }}>
+          <p style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 10 }}>
             What "Copy payment message" puts on the clipboard. Tap a tag to add it where the cursor is.
             A line whose tag has nothing to fill it, like no pickup time, is left out — except {'{name}'}, which just disappears.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
             {PLACEHOLDERS.map(p => (
               <button key={p} onClick={() => insert(p)} className="chip" aria-label={`Insert ${HELP[p]}`}>
                 <span className="data" style={{ fontSize: 11 }}>{`{${p}}`}</span>
@@ -143,7 +143,7 @@ export default function SettingsPage() {
 
           <p className="label" style={{ margin: '16px 0 8px' }}>Preview</p>
           <div className="panel" style={{ padding: 14, whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.5, color: 'var(--t1)' }}>
-            {fillTemplate(template, { ...SAMPLE, gcash, maya }) || <span style={{ color: 'var(--t3)' }}>(empty)</span>}
+            {fillTemplate(template, { ...SAMPLE, gcash, maya }) || <span style={{ color: 'var(--t2)' }}>(empty)</span>}
           </div>
 
           <div style={{ marginTop: 18 }}>
