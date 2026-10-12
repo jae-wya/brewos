@@ -87,16 +87,20 @@ export default function DashboardPage() {
           <StatCard label="Orders today" value={stats?.total_orders      ?? 0} color="var(--t1)"     delay={80}  />
           <StatCard label="Completed"    value={stats?.completed_orders  ?? 0} color="var(--ready)"  delay={160} />
           <StatCard label="Cancelled"    value={stats?.cancelled_orders  ?? 0} color="var(--t3)"     delay={200} />
-          {/* Revenue — full width */}
-          <div className="panel page-enter-child" style={{
+          {/* Revenue — full width; opens the day's breakdown on /sales */}
+          <NavLink to="/sales" aria-label="Revenue today — open daily sales" className="panel page-enter-child" style={{
             gridColumn: '1 / -1', padding: '16px', animationDelay: '260ms',
             background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)',
+            display: 'block', textDecoration: 'none',
           }}>
             <span className="label" style={{ color: 'var(--accent-lo)' }}>Revenue today</span>
             <div className="data" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', marginTop: 8, lineHeight: 1 }}>
               &#8369;{Number(stats?.total_revenue ?? 0).toLocaleString()}
             </div>
-          </div>
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginTop: 10 }}>
+              Daily sales &rarr;
+            </span>
+          </NavLink>
         </div>
       )}
 

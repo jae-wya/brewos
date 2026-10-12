@@ -107,6 +107,22 @@ export const ordersApi = {
     api.patch(`/orders/${orderId}/payment`).then(r => r.data),
 }
 
+// One day's sales. No date: today in the café's timezone (the server decides).
+export const salesApi = {
+  getDay: (date?: string): Promise<SalesDay> =>
+    api.get('/sales', { params: date ? { date } : {} }).then(r => r.data),
+}
+
+export interface SalesDay {
+  date: string      // YYYY-MM-DD, the day shown
+  today: string     // YYYY-MM-DD, today in the café's timezone
+  timezone: string
+  revenue: number
+  order_count: number
+  average_order_value: number
+  top_items: { name: string, category: string | null, quantity: number }[]
+}
+
 export const queueApi = {
   getQueue: () => api.get('/queue').then(r => r.data),
   getStats: () => api.get('/queue/stats').then(r => r.data),

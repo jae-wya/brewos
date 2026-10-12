@@ -12,12 +12,14 @@ export const keys = {
   orders: ['orders'] as const,
   queue: ['queue'] as const,
   stats: ['stats'] as const,
+  sales: ['sales'] as const,
 }
 
-// After anything that changes an order: the queue, the orders list and the
-// dashboard counts/revenue all read from it.
+// After anything that changes an order: the queue, the orders list, the
+// dashboard counts/revenue and daily sales all read from it.
 export function refreshOrders(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: keys.orders })
   qc.invalidateQueries({ queryKey: keys.queue })
   qc.invalidateQueries({ queryKey: keys.stats })
+  qc.invalidateQueries({ queryKey: keys.sales })
 }
