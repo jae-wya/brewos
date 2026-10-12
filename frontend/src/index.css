@@ -39,6 +39,19 @@
   --pill: 999px;
   --touch: 44px;
 
+  /* Light. One warm bulb hangs above the top of the screen: the lamp is its
+     pool, rim the 1px catch-light on the top edge of things under it, cast
+     the shadow they throw downward. */
+  --lamp:      rgba(255,179,71,0.16);
+  --rim:       rgba(255,220,170,0.07);
+  --cast:      rgba(0,0,0,0.55);
+  /* The chit: her paper order slip, and the ink written on it. */
+  --chit:      #F2E8D5;
+  --ink:       #1A1208;
+  --ink-2:     #5A4734;
+  /* Heat on a chit running late; never behind text. */
+  --ember:     #FF6B35;
+
   /* Grain texture */
   --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
 }
@@ -70,6 +83,14 @@
   --brewing:   #006A88;
   --ready:     #00703F;
   --danger:    #B81C1C;
+  /* The stall by day: no bulb, a warm daylight wash from above. */
+  --lamp:      rgba(255,206,140,0.30);
+  --rim:       rgba(255,255,255,0.9);
+  --cast:      rgba(90,60,30,0.16);
+  --chit:      #FFFFFF;
+  --ink:       #1A1208;
+  --ink-2:     #5A4734;
+  --ember:     #D65120;
 }
 
 /* ─── Base ─── */
@@ -86,8 +107,7 @@
     min-height: 100vh;
     transition: background 0.25s, color 0.25s;
     overscroll-behavior-y: contain;
-    /* Subtle warm grain on bg */
-    background-image: var(--grain);
+    /* The lamp pool and grain live on body::before, below. */
     background-attachment: fixed;
   }
 
@@ -117,6 +137,18 @@
   }
 }
 
+/* The bulb. Static: no flicker, no animation, painted once. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    var(--grain),
+    radial-gradient(ellipse 110% 55% at 50% -6%, var(--lamp), transparent 72%);
+}
+
 /* ─── Components ─── */
 @layer components {
 
@@ -125,6 +157,7 @@
     background: var(--s1);
     border: 1px solid var(--border);
     border-radius: var(--r);
+    box-shadow: inset 0 1px 0 var(--rim), 0 10px 20px -14px var(--cast);
   }
 
   /* ── Gradient accent border (heat pulse) ── */
@@ -180,12 +213,11 @@
   .btn-fire {
     background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
     color: #14100C;
-    box-shadow: 0 4px 20px rgba(255,107,53,0.25);
+    /* Lit from above (catch-light on top), casting a shadow down — not an
+       outward neon glow. */
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 16px -8px var(--cast);
   }
-  .btn-fire:hover:not(:disabled) {
-    filter: brightness(1.08);
-    box-shadow: 0 6px 28px rgba(255,107,53,0.4);
-  }
+  .btn-fire:hover:not(:disabled) { filter: brightness(1.06); }
 
   .btn-ghost {
     background: var(--s2);
@@ -212,6 +244,41 @@
     flex-shrink: 0;
   }
   .icon-btn:hover { background: var(--s3); }
+
+  /* The chit: her paper slip. Perforated top where it tore off the pad;
+     shadow cast down onto the counter. Ink on paper, ~15:1. */
+  .chit {
+    position: relative;
+    background: var(--chit);
+    color: var(--ink);
+    border-radius: 2px 2px var(--r) var(--r);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 12px 22px -14px var(--cast);
+  }
+  [data-theme="light"] .chit { border: 1px solid var(--border); }
+  .chit::before {
+    content: '';
+    position: absolute;
+    top: -3px; left: 6px; right: 6px; height: 6px;
+    background: radial-gradient(circle at 5px 3px, var(--bg) 2.4px, transparent 2.8px) 0 0 / 10px 6px repeat-x;
+    pointer-events: none;
+  }
+  /* Heat: how late it's running (lib/heat.ts). An ember edge along the top
+     and a warm cast underneath, never behind text; the minutes are always
+     written on the chit too. */
+  .chit::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0; height: 0;
+    border-radius: 2px 2px 0 0;
+    background: var(--ember);
+    pointer-events: none;
+  }
+  .chit[data-heat="1"]::after { height: 3px; opacity: 0.45; }
+  .chit[data-heat="2"]::after { height: 4px; opacity: 0.75; }
+  .chit[data-heat="3"]::after { height: 6px; opacity: 1; }
+  .chit[data-heat="1"] { box-shadow: 0 12px 22px -14px rgba(255,107,53,0.35); }
+  .chit[data-heat="2"] { box-shadow: 0 14px 26px -12px rgba(255,107,53,0.55); }
+  .chit[data-heat="3"] { box-shadow: 0 0 0 2px var(--ember), 0 16px 30px -10px rgba(255,107,53,0.7); }
 
   /* Status dot */
   .dot {

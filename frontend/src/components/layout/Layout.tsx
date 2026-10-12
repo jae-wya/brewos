@@ -13,7 +13,7 @@ export default function Layout() {
   const { theme, toggle } = useTheme()
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}> {/* transparent: the lamp (body::before) shows through */}
       {/* Topbar */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
