@@ -20,6 +20,13 @@ const ABOVE_NAV = { bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))', zIn
 // .btn-fire / .btn-ghost are colours only; .btn gives padding, shape and
 // height. Without it the buttons rendered 23px tall with no padding.
 const TOUCH = { minHeight: 'var(--touch)' }
+// .heat-border paints its gradient over the whole box; it reads as a glowing
+// edge only when the content has its own background (as on the queue cards).
+// Without this inner box the bar was orange all over and the label unreadable.
+const HEAT_INNER = { background: 'var(--s1)', borderRadius: 'var(--r)' }
+// .label's --t3 is about 3.3:1 on --s1, too faint for 10px text on a bar she
+// glances at; --t2 is about 6.3:1.
+const LABEL = { color: 'var(--t2)' }
 
 // This component is mounted at the root, so a throw here blanks the whole
 // app. localStorage throws when storage is blocked (some private modes).
@@ -90,9 +97,10 @@ export default function InstallPrompt() {
   // --- Update available ------------------------------------------------
   if (needRefresh) {
     return (
-      <div className="fixed left-4 right-4 panel heat-border p-4 flex items-center gap-3" style={ABOVE_NAV}>
+      <div className="fixed left-4 right-4 heat-border" style={ABOVE_NAV}>
+      <div className="p-4 flex items-center gap-3" style={HEAT_INNER}>
         <div className="flex-1">
-          <p className="label">Update ready</p>
+          <p className="label" style={LABEL}>Update ready</p>
           <p className="text-sm opacity-80">A new version of BrewOS is available.</p>
         </div>
         <button className="btn btn-ghost" style={TOUCH} onClick={() => setNeedRefresh(false)}>
@@ -101,6 +109,7 @@ export default function InstallPrompt() {
         <button className="btn btn-fire" style={TOUCH} onClick={() => updateServiceWorker(true)}>
           Reload
         </button>
+      </div>
       </div>
     )
   }
@@ -113,7 +122,7 @@ export default function InstallPrompt() {
       <div className="fixed left-4 right-4 panel p-4" style={ABOVE_NAV}>
         {showIOSHelp ? (
           <>
-            <p className="label mb-2">Install BrewOS</p>
+            <p className="label mb-2" style={LABEL}>Install BrewOS</p>
             <ol className="text-sm opacity-80 space-y-1 list-decimal list-inside">
               <li>Tap the Share button in Safari</li>
               <li>Scroll down and tap “Add to Home Screen”</li>
@@ -126,7 +135,7 @@ export default function InstallPrompt() {
         ) : (
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="label">Install BrewOS</p>
+              <p className="label" style={LABEL}>Install BrewOS</p>
               <p className="text-sm opacity-80">Add it to your home screen.</p>
             </div>
             <button className="btn btn-ghost" style={TOUCH} onClick={dismiss}>
@@ -145,9 +154,10 @@ export default function InstallPrompt() {
   if (!deferred) return null
 
   return (
-    <div className="fixed left-4 right-4 panel heat-border p-4 flex items-center gap-3" style={ABOVE_NAV}>
+    <div className="fixed left-4 right-4 heat-border" style={ABOVE_NAV}>
+    <div className="p-4 flex items-center gap-3" style={HEAT_INNER}>
       <div className="flex-1">
-        <p className="label">Install BrewOS</p>
+        <p className="label" style={LABEL}>Install BrewOS</p>
         <p className="text-sm opacity-80">
           Open it like an app, straight from your home screen.
         </p>
@@ -158,6 +168,7 @@ export default function InstallPrompt() {
       <button className="btn btn-fire" style={TOUCH} onClick={install}>
         Install
       </button>
+    </div>
     </div>
   )
 }
