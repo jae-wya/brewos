@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { menuApi, ordersApi, BUSINESS_ID } from '../lib/api'
+import { menuApi, ordersApi, errorMessage, BUSINESS_ID } from '../lib/api'
 import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
@@ -316,7 +316,7 @@ export default function NewOrderPage() {
                     <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
                       &#8369;{(item.estimated_unit_price * item.quantity).toLocaleString()}
                     </span>
-                    <button onClick={() => setCart(p => p.filter((_, j) => j !== i))}
+                    <button onClick={() => { place.reset(); setCart(p => p.filter((_, j) => j !== i)) }}
                       aria-label={`Remove ${item.item_category ?? ''} ${item.item_name}`.trim()}
                       style={{ width: 'var(--touch)', height: 'var(--touch)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }}>
                       <Trash2 size={14} aria-hidden="true" />
@@ -331,6 +331,13 @@ export default function NewOrderPage() {
                   &#8369;{total.toLocaleString()}
                 </span>
               </div>
+
+              {/* The server's sentence, e.g. which item was deleted from the menu */}
+              {place.isError && (
+                <p role="alert" style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 10 }}>
+                  {errorMessage(place.error)}
+                </p>
+              )}
 
               <button onClick={() => place.mutate()} disabled={place.isPending || !cart.length}
                 className="btn btn-fire" style={{ width: '100%', padding: '16px', fontSize: 15 }}>

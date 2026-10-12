@@ -33,6 +33,43 @@ class UpdateOrderStatusRequest(BaseModel):
     status: str
 
 
+# --- Helpers ---
+# Cart problems name the item with its category, which tells Hot and Iced
+# apart: "Spanish Latte (Iced Coffee)". Every message is shown to her as-is.
+def item_label(row: dict) -> str:
+    category = (row.get("categories") or {}).get("name")
+    return f"{row['name']} ({category})" if category else row["name"]
+
+
+def join_names(names: List[str]) -> str:
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def missing_items_message(supabase, business_id: str, item_ids: List[str]) -> str:
+    """For cart items deleted from the menu since they were added."""
+    res = supabase.table("menu_items")\
+        .select("name, categories(name)")\
+        .eq("business_id", business_id)\
+        .in_("id", item_ids)\
+        .execute()
+    names = [item_label(row) for row in res.data]
+
+    if not names:  # not even a deleted row left to name
+        return "An item in the cart is no longer on the menu. Remove it and add it again."
+    if len(names) == 1:
+        return f"{names[0]} is no longer on the menu. Remove it from the cart."
+    return f"{join_names(names)} are no longer on the menu. Remove them from the cart."
+
+
+def unavailable_items_message(rows: List[dict]) -> str:
+    """For cart items she turned off since they were added. A different
+    remedy from deleted: she can turn it back on."""
+    names = [item_label(row) for row in rows]
+    if len(names) == 1:
+        return f"{names[0]} is turned off right now. Turn it back on, or remove it from the cart."
+    return f"{join_names(names)} are turned off right now. Turn them back on, or remove them from the cart."
+
+
 # --- Routes ---
 @router.post("/")
 async def create_order(body: CreateOrderRequest):
@@ -48,7 +85,7 @@ async def create_order(body: CreateOrderRequest):
     option_ids = list({m.modifier_option_id for i in body.items for m in i.modifiers})
 
     items_res = supabase.table("menu_items")\
-        .select("id, name, base_price, categories(name)")\
+        .select("id, name, base_price, is_available, categories(name)")\
         .eq("business_id", body.business_id)\
         .in_("id", item_ids)\
         .is_("deleted_at", None)\
@@ -64,10 +101,14 @@ async def create_order(body: CreateOrderRequest):
             .execute()
         options = {row["id"]: row for row in options_res.data}
 
-    missing = [i for i in item_ids if i not in menu_items] + \
-              [o for o in option_ids if o not in options]
-    if missing:
-        raise HTTPException(status_code=400, detail=f"Unknown menu item or option: {missing}")
+    missing_items = [i for i in item_ids if i not in menu_items]
+    if missing_items:
+        raise HTTPException(status_code=409, detail=missing_items_message(supabase, body.business_id, missing_items))
+    turned_off = [row for row in menu_items.values() if not row["is_available"]]
+    if turned_off:
+        raise HTTPException(status_code=409, detail=unavailable_items_message(turned_off))
+    if any(o not in options for o in option_ids):
+        raise HTTPException(status_code=409, detail="An add-on in the cart is no longer on the menu. Remove that item and add it again.")
 
     lines = []
     for item in body.items:
