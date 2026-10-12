@@ -13,13 +13,25 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISS_KEY = 'brewos:install-dismissed'
 
+// Above the bottom nav (about 57px tall, zIndex 100), like the Menu page's
+// undo bar; just under that bar (105) and the item sheet (110). The Tailwind
+// bottom-4/z-50 it had put the bar's lower half behind the nav.
+const ABOVE_NAV = { bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))', zIndex: 104 }
+// .btn-fire / .btn-ghost are colours only; .btn gives padding, shape and
+// height. Without it the buttons rendered 23px tall with no padding.
+const TOUCH = { minHeight: 'var(--touch)' }
+
+// This component is mounted at the root, so a throw here blanks the whole
+// app. localStorage throws when storage is blocked (some private modes).
+function wasDismissed(): boolean {
+  try { return localStorage.getItem(DISMISS_KEY) === '1' } catch { return false }
+}
+
 export default function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSHelp, setShowIOSHelp] = useState(false)
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(DISMISS_KEY) === '1'
-  )
+  const [dismissed, setDismissed] = useState(wasDismissed)
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -70,7 +82,7 @@ export default function InstallPrompt() {
   }
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, '1')
+    try { localStorage.setItem(DISMISS_KEY, '1') } catch { /* hidden for this visit only */ }
     setDismissed(true)
     setShowIOSHelp(false)
   }
@@ -78,15 +90,15 @@ export default function InstallPrompt() {
   // --- Update available ------------------------------------------------
   if (needRefresh) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 z-50 panel heat-border p-4 flex items-center gap-3">
+      <div className="fixed left-4 right-4 panel heat-border p-4 flex items-center gap-3" style={ABOVE_NAV}>
         <div className="flex-1">
           <p className="label">Update ready</p>
           <p className="text-sm opacity-80">A new version of BrewOS is available.</p>
         </div>
-        <button className="btn-ghost" onClick={() => setNeedRefresh(false)}>
+        <button className="btn btn-ghost" style={TOUCH} onClick={() => setNeedRefresh(false)}>
           Later
         </button>
-        <button className="btn-fire" onClick={() => updateServiceWorker(true)}>
+        <button className="btn btn-fire" style={TOUCH} onClick={() => updateServiceWorker(true)}>
           Reload
         </button>
       </div>
@@ -98,7 +110,7 @@ export default function InstallPrompt() {
   // --- iOS: manual instructions ----------------------------------------
   if (isIOS) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 z-50 panel p-4">
+      <div className="fixed left-4 right-4 panel p-4" style={ABOVE_NAV}>
         {showIOSHelp ? (
           <>
             <p className="label mb-2">Install BrewOS</p>
@@ -107,7 +119,7 @@ export default function InstallPrompt() {
               <li>Scroll down and tap “Add to Home Screen”</li>
               <li>Tap “Add”</li>
             </ol>
-            <button className="btn-ghost mt-3 w-full" onClick={dismiss}>
+            <button className="btn btn-ghost mt-3 w-full" style={TOUCH} onClick={dismiss}>
               Got it
             </button>
           </>
@@ -117,10 +129,10 @@ export default function InstallPrompt() {
               <p className="label">Install BrewOS</p>
               <p className="text-sm opacity-80">Add it to your home screen.</p>
             </div>
-            <button className="btn-ghost" onClick={dismiss}>
+            <button className="btn btn-ghost" style={TOUCH} onClick={dismiss}>
               Not now
             </button>
-            <button className="btn-fire" onClick={() => setShowIOSHelp(true)}>
+            <button className="btn btn-fire" style={TOUCH} onClick={() => setShowIOSHelp(true)}>
               How
             </button>
           </div>
@@ -133,17 +145,17 @@ export default function InstallPrompt() {
   if (!deferred) return null
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 panel heat-border p-4 flex items-center gap-3">
+    <div className="fixed left-4 right-4 panel heat-border p-4 flex items-center gap-3" style={ABOVE_NAV}>
       <div className="flex-1">
         <p className="label">Install BrewOS</p>
         <p className="text-sm opacity-80">
           Open it like an app, straight from your home screen.
         </p>
       </div>
-      <button className="btn-ghost" onClick={dismiss}>
+      <button className="btn btn-ghost" style={TOUCH} onClick={dismiss}>
         Not now
       </button>
-      <button className="btn-fire" onClick={install}>
+      <button className="btn btn-fire" style={TOUCH} onClick={install}>
         Install
       </button>
     </div>
