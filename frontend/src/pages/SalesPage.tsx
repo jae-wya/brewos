@@ -96,7 +96,8 @@ export default function SalesPage() {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
             <Stat wide label="Revenue" value={peso(data.revenue)} />
-            <Stat label="Orders" value={String(data.order_count)} />
+            {/* "Paid", so it isn't read as the dashboard's "Orders today" (every order created) disagreeing */}
+            <Stat label="Paid orders" value={String(data.order_count)} />
             <Stat label="Average order" value={peso(data.average_order_value)} />
           </div>
 
