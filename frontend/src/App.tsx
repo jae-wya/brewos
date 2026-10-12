@@ -8,6 +8,7 @@ import NewOrderPage from './pages/NewOrderPage'
 import MenuPage from './pages/MenuPage'
 import DashboardPage from './pages/DashboardPage'
 import SalesPage from './pages/SalesPage'
+import SettingsPage from './pages/SettingsPage'
 import InstallPrompt from './components/InstallPrompt'
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="orders/new" element={<NewOrderPage />} />
         <Route path="menu" element={<MenuPage />} />
         <Route path="sales" element={<SalesPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
     {/* Once, outside the routes: install bar and "Update ready" on every page */}

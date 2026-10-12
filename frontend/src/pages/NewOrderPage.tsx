@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { menuApi, ordersApi, errorMessage } from '../lib/api'
+import { menuApi, ordersApi, settingsApi, errorMessage } from '../lib/api'
 import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
 import { isPlaceholder } from '../lib/menuCache'
 import { shownAvailability } from '../hooks/useAvailabilityToggle'
-import { ChevronLeft, X, Check, Minus, Plus, Trash2 } from 'lucide-react'
+import { fillTemplate } from '../lib/composer'
+import { ChevronLeft, X, Check, Minus, Plus, Trash2, Copy } from 'lucide-react'
+
+const PAY_METHODS: [string, string][] = [['cash', 'Cash'], ['gcash', 'GCash'], ['maya', 'Maya'], ['card', 'Card']]
 
 function ItemModal({ item, menuData, onAdd, onClose }: {
   item: MenuItem, menuData: MenuData,
@@ -179,12 +182,18 @@ export default function NewOrderPage() {
   const [paidChoice, setPaidChoice] = useState<boolean | null>(null)
   const paid = paidChoice ?? src === 'messenger'
   const pickSource = (s: 'walk_in' | 'messenger') => { setSrc(s); setPaidChoice(null) }
+  // Messenger only: when they'll pick it up, in her words ("3pm", "in an
+  // hour or two"). Saved as the order's notes, shown on the queue.
+  const [pickup, setPickup] = useState('')
+  const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
+  const { data: settings } = useQuery({ queryKey: keys.settings, queryFn: settingsApi.get, staleTime: 5 * 60_000 })
   const [successOrder, setSuccessOrder] = useState<string | null>(null)
 
   const place = useMutation({
     mutationFn: () => ordersApi.createOrder({
       source: src,
       customer_name: name || null, payment_method: pay, paid,
+      notes: src === 'messenger' && pickup.trim() ? `Pickup: ${pickup.trim()}` : null,
       // Only IDs and quantities — the backend looks up prices and names
       items: cart.map(i => ({
         menu_item_id: i.menu_item_id, quantity: i.quantity,
@@ -200,6 +209,29 @@ export default function NewOrderPage() {
   })
 
   const total = cart.reduce((s, i) => s + i.estimated_unit_price * i.quantity, 0)
+
+  // The payment request she sends mid-thread, before the customer pays,
+  // filled from the cart. Total is the cart's: live menu prices, the same
+  // the server charges — never anything typed into the thread.
+  const message = () => fillTemplate(settings?.messenger_template ?? '', {
+    lines: cart.map(i => ({
+      quantity: i.quantity, name: i.item_name, category: i.item_category,
+      // Name the category only for Hot/Iced twins, where the customer needs it.
+      showCategory: (menuData?.items.filter(m => m.name === i.item_name).length ?? 0) > 1,
+      modifiers: i.modifiers.map(m => m.option_name),
+      lineTotal: i.estimated_unit_price * i.quantity,
+    })),
+    total, pickup, name, gcash: settings?.gcash_number ?? '', maya: settings?.maya_number ?? '',
+  })
+  const copyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(message())
+      setCopied('yes')
+      setTimeout(() => setCopied(c => c === 'yes' ? null : c), 2500)
+    } catch {
+      setCopied('failed') // show the text so she can long-press copy it
+    }
+  }
   const count = cart.reduce((s, i) => s + i.quantity, 0)
   const cats = menuData?.categories ?? []
   const items = menuData?.items ?? []
@@ -319,11 +351,11 @@ export default function NewOrderPage() {
             <div style={{ padding: '14px 16px' }}>
               <p className="label" style={{ marginBottom: 10 }}>Payment</p>
               <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-                {['cash', 'gcash', 'card'].map(pm => (
+                {PAY_METHODS.map(([pm, label]) => (
                   <button key={pm} onClick={() => setPay(pm)} aria-pressed={pay === pm}
                     className={`chip flex-1 ${pay === pm ? 'chip-on' : ''}`}
-                    style={{ textTransform: 'capitalize', justifyContent: 'center' }}>
-                    {pm}
+                    style={{ justifyContent: 'center', padding: '7px 6px' }}>
+                    {label}
                   </button>
                 ))}
               </div>
@@ -365,6 +397,33 @@ export default function NewOrderPage() {
                   &#8369;{total.toLocaleString()}
                 </span>
               </div>
+
+              {src === 'messenger' && (
+                <div style={{ marginBottom: 14 }}>
+                  <label htmlFor="pickup" className="label" style={{ display: 'block', marginBottom: 8 }}>Pickup</label>
+                  <input id="pickup" type="text" value={pickup} onChange={e => setPickup(e.target.value)}
+                    placeholder="3pm, in an hour…" className="field" autoComplete="off" />
+                </div>
+              )}
+
+              {src === 'messenger' && (
+                <div style={{ marginBottom: 12 }}>
+                  <button onClick={copyMessage} disabled={!cart.length || !settings}
+                    className="btn btn-ghost" style={{ width: '100%', minHeight: 'var(--touch)', fontSize: 13 }}>
+                    {copied === 'yes' ? <><Check size={14} aria-hidden="true" /> Copied — paste it in Messenger</>
+                      : <><Copy size={14} aria-hidden="true" /> Copy payment message</>}
+                  </button>
+                  {copied === 'failed' && (
+                    <div style={{ marginTop: 8 }}>
+                      <p role="alert" style={{ fontSize: 11, color: 'var(--t2)', marginBottom: 6 }}>
+                        Couldn't copy automatically. Press and hold the text to copy it.
+                      </p>
+                      <textarea readOnly value={message()} rows={8} className="field" style={{ fontSize: 12 }}
+                        onFocus={e => e.currentTarget.select()} />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* The server's sentence, e.g. which item was deleted from the menu */}
               {place.isError && (

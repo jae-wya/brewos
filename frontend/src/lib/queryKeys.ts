@@ -13,6 +13,7 @@ export const keys = {
   queue: ['queue'] as const,
   stats: ['stats'] as const,
   sales: ['sales'] as const,
+  settings: ['settings'] as const,
 }
 
 // After anything that changes an order: the queue, the orders list, the

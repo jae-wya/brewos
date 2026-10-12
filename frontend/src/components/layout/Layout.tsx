@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon, LogOut } from 'lucide-react'
+import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon, LogOut, Settings } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
 import { clearSession } from '../../lib/session'
 
@@ -58,6 +58,9 @@ export default function Layout() {
             className="icon-btn" style={{ width: 36, height: 36 }}>
             {theme === 'dark' ? <Sun size={13} aria-hidden="true" /> : <Moon size={13} aria-hidden="true" />}
           </button>
+          <NavLink to="/settings" aria-label="Settings" className="icon-btn" style={{ width: 36, height: 36 }}>
+            <Settings size={13} aria-hidden="true" />
+          </NavLink>
           <button onClick={logOut} aria-label="Log out" className="icon-btn" style={{ width: 36, height: 36 }}>
             <LogOut size={13} aria-hidden="true" />
           </button>

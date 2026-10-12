@@ -107,6 +107,22 @@ export const ordersApi = {
     api.patch(`/orders/${orderId}/payment`).then(r => r.data),
 }
 
+// Her settings (Settings page): the Messenger payment-request template and
+// her GCash / Maya numbers. Sending messenger_template: null resets it to the
+// default; an empty number removes it.
+export interface Settings {
+  messenger_template: string
+  is_default_template: boolean
+  default_template: string
+  gcash_number: string
+  maya_number: string
+}
+export const settingsApi = {
+  get: (): Promise<Settings> => api.get('/settings').then(r => r.data),
+  update: (body: { messenger_template?: string | null, gcash_number?: string, maya_number?: string }): Promise<Settings> =>
+    api.patch('/settings', body).then(r => r.data),
+}
+
 // One day's sales. No date: today in the café's timezone (the server decides).
 export const salesApi = {
   getDay: (date?: string): Promise<SalesDay> =>
