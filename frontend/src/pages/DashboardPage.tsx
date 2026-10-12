@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.12em', marginBottom: 8 }}>
+        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', letterSpacing: '0.1em', marginBottom: 8 }}>
           {date.toUpperCase()} · {shift.toUpperCase()} SHIFT
         </p>
         <h1 className="display" style={{ fontSize: 52, color: 'var(--t1)' }}>
@@ -87,14 +87,14 @@ export default function DashboardPage() {
           <StatCard label="Active now"   value={stats?.active_orders    ?? 0} color="var(--pending)" delay={0}   />
           <StatCard label="Orders today" value={stats?.total_orders      ?? 0} color="var(--t1)"     delay={80}  />
           <StatCard label="Completed"    value={stats?.completed_orders  ?? 0} color="var(--ready)"  delay={160} />
-          <StatCard label="Cancelled"    value={stats?.cancelled_orders  ?? 0} color="var(--t3)"     delay={200} />
+          <StatCard label="Cancelled"    value={stats?.cancelled_orders  ?? 0} color="var(--t2)"     delay={200} />
           {/* Revenue — full width; opens the day's breakdown on /sales */}
           <NavLink to="/sales" aria-label="Revenue today — open daily sales" className="panel page-enter-child" style={{
             gridColumn: '1 / -1', padding: '16px', animationDelay: '260ms',
             background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)',
             display: 'block', textDecoration: 'none',
           }}>
-            <span className="label" style={{ color: 'var(--accent-lo)' }}>Revenue today</span>
+            <span className="label" style={{ color: 'var(--accent)' }}>Revenue today</span>
             <div className="data" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', marginTop: 8, lineHeight: 1 }}>
               {peso(Number(stats?.total_revenue ?? 0))}
             </div>

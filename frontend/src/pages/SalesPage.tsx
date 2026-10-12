@@ -53,7 +53,7 @@ export default function SalesPage() {
     <div className="page-enter" style={{ padding: '16px 16px 28px', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
         <NavLink to="/dashboard" aria-label="Back to dashboard"
-          style={{ color: 'var(--t2)', display: 'flex', padding: '10px 8px 10px 0' }}>
+          style={{ color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, marginLeft: -12, flexShrink: 0 }}>
           <ChevronLeft size={18} aria-hidden="true" />
         </NavLink>
         <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95 }}>DAILY SALES</h1>
@@ -74,7 +74,7 @@ export default function SalesPage() {
           <ChevronRight size={16} aria-hidden="true" />
         </button>
       </div>
-      <p style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 16 }}>
+      <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', letterSpacing: '0.06em', marginBottom: 16 }}>
         {shown ? `${longDate(shown).toUpperCase()}${isToday ? ' · TODAY' : ''}` : ' '}
       </p>
 
@@ -108,21 +108,21 @@ export default function SalesPage() {
                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
                 borderTop: '1px solid var(--border)',
               }}>
-                <span className="data" style={{ fontSize: 12, color: 'var(--t3)', width: 14 }}>{i + 1}</span>
+                <span className="data" style={{ fontSize: 12, color: 'var(--t2)', width: 14 }}>{i + 1}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{t.name}</p>
-                  {t.category && <p style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>{t.category}</p>}
+                  {t.category && <p style={{ fontSize: 12, color: 'var(--t2)', marginTop: 1 }}>{t.category}</p>}
                 </div>
                 <span className="data" style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)' }}>&times;{t.quantity}</span>
               </div>
             )) : (
-              <p role="status" style={{ padding: '6px 16px 16px', fontSize: 12, color: 'var(--t3)' }}>
+              <p role="status" style={{ padding: '6px 16px 16px', fontSize: 13, color: 'var(--t2)' }}>
                 No paid orders on this day.
               </p>
             )}
           </div>
 
-          <p style={{ fontSize: 11, color: 'var(--t3)', marginTop: 12 }}>
+          <p style={{ fontSize: 12, color: 'var(--t2)', marginTop: 12 }}>
             Paid orders only, on the day they were paid. Cancelled orders don't count.
           </p>
         </>
