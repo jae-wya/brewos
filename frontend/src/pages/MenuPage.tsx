@@ -36,11 +36,9 @@ function ModifierOptionRow({ option }: { option: ModifierOption }) {
         )}
       </div>
       <button
-        onClick={() => tog.set(!option.is_available)}
-        disabled={tog.busy}
+        onClick={() => tog.set(option.is_available, !option.is_available)}
         role="switch"
         aria-checked={option.is_available}
-        aria-busy={tog.busy}
         aria-label={`${option.is_available ? 'Disable' : 'Enable'} ${option.name} add-on`}
         className={`tog ${option.is_available ? 'tog-on' : 'tog-off'}`}
         style={{ marginLeft: 16, transform: 'scale(0.85)' }}
@@ -79,11 +77,9 @@ function MenuItemRow({ item, allModifiers, idx }: {
           </p>
         </div>
         <button
-          onClick={() => tog.set(!item.is_available)}
-          disabled={tog.busy}
+          onClick={() => tog.set(item.is_available, !item.is_available)}
           role="switch"
           aria-checked={item.is_available}
-          aria-busy={tog.busy}
           aria-label={`${item.is_available ? 'Disable' : 'Enable'} ${item.name}`}
           className={`tog ${item.is_available ? 'tog-on' : 'tog-off'}`}
           style={{ marginLeft: 16 }}

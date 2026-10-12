@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient, useIsMutating } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { menuApi, errorMessage } from '../lib/api'
 import { keys } from '../lib/queryKeys'
+import { setAvailability } from '../lib/availabilityWrites'
 import { MenuData } from '../types'
 
 type Kind = 'item' | 'option'
@@ -22,46 +23,30 @@ function withAvailability(data: MenuData, kind: Kind, id: string, value: boolean
   }
 }
 
-// On/off switch on the Menu page.
-//   * Flips instantly in the cache, then sends the request.
-//   * Sends the target value, not "toggle", so a retry can't undo itself.
-//   * While one request for this item/option is in flight, every switch for
-//     it is disabled — no second, conflicting write can be queued.
-//   * On failure: puts back ONLY this item/option (not a whole-menu snapshot,
-//     which would also undo a different switch she flipped meanwhile) and
-//     returns an error for the row to show.
-//   * On success: writes the server's value, and marks the order screen's
-//     menu stale so it refetches next time it opens. The Menu page itself is
-//     not refetched, so a slow refetch can't flash old values over a
-//     still-pending switch.
+// On/off switch on the Menu page. Timing, ordering and rollback live in
+// lib/availabilityWrites.ts; this hook connects them to the cache and the API.
+//   * The Menu page is never refetched for a toggle, so a slow refetch can't
+//     flash old values over a switch she just flipped.
+//   * After a successful save, the order screen's menu is marked stale so it
+//     refetches next time it opens.
+//   * On failure, returns an error for the row to show.
 export function useAvailabilityToggle(kind: Kind, id: string, name: string) {
   const qc = useQueryClient()
-  const mutationKey = ['availability', kind, id]
-  const busy = useIsMutating({ mutationKey }) > 0
   const [error, setError] = useState<string | null>(null)
 
-  const mutation = useMutation({
-    mutationKey,
-    mutationFn: (next: boolean) =>
-      kind === 'item' ? menuApi.setItemAvailable(id, next) : menuApi.setOptionAvailable(id, next),
-    onMutate: async (next: boolean) => {
-      setError(null)
-      await qc.cancelQueries({ queryKey: keys.menuFull })
-      qc.setQueryData<MenuData>(keys.menuFull, d => d && withAvailability(d, kind, id, next))
-    },
-    onSuccess: (res) => {
-      qc.setQueryData<MenuData>(keys.menuFull, d => d && withAvailability(d, kind, id, res.is_available))
-      qc.invalidateQueries({ queryKey: keys.menu })
-    },
-    onError: (err, next) => {
-      qc.setQueryData<MenuData>(keys.menuFull, d => d && withAvailability(d, kind, id, !next))
-      setError(`Couldn't turn ${next ? 'on' : 'off'} ${name}. ${errorMessage(err)}`)
-    },
-  })
-
-  return {
-    set: (next: boolean) => { if (!busy) mutation.mutate(next) },
-    busy,
-    error,
+  const set = (shown: boolean, next: boolean) => {
+    setError(null)
+    setAvailability(`${kind}:${id}`, shown, next, {
+      send: v => (kind === 'item' ? menuApi.setItemAvailable(id, v) : menuApi.setOptionAvailable(id, v))
+        .then(res => res.is_available),
+      show: v => {
+        qc.cancelQueries({ queryKey: keys.menuFull })
+        qc.setQueryData<MenuData>(keys.menuFull, d => d && withAvailability(d, kind, id, v))
+      },
+      onSaved: () => qc.invalidateQueries({ queryKey: keys.menu }),
+      onFailed: (v, err) => setError(`Couldn't turn ${v ? 'on' : 'off'} ${name}. ${errorMessage(err)}`),
+    })
   }
+
+  return { set, error }
 }
