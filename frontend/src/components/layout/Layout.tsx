@@ -41,13 +41,13 @@ export default function Layout() {
             <div className="display" style={{ fontSize: 20, color: 'var(--t1)', lineHeight: 1 }}>
               BrewOS
             </div>
-            <div style={{ fontSize: 8, color: 'var(--t3)', lineHeight: 1, marginTop: 2, fontFamily: 'JetBrains Mono', letterSpacing: '0.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 8, color: 'var(--t2)', lineHeight: 1, marginTop: 2, fontFamily: 'JetBrains Mono', letterSpacing: '0.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               GLIMPSE OF DEL
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
             className="icon-btn">
             {theme === 'dark' ? <Sun size={13} aria-hidden="true" /> : <Moon size={13} aria-hidden="true" />}
@@ -82,9 +82,9 @@ export default function Layout() {
               alignItems: 'center', gap: 2,
               padding: '10px 0 12px',
               textDecoration: 'none',
-              fontFamily: 'JetBrains Mono', fontSize: 8, fontWeight: 500,
+              fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 600,
               letterSpacing: '0.06em',
-              color: isActive ? 'var(--accent)' : 'var(--t3)',
+              color: isActive ? 'var(--accent)' : 'var(--t2)',
               minHeight: 'var(--touch)',
               transition: 'color 0.15s',
               borderTop: isActive
