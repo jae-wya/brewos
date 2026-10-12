@@ -23,12 +23,31 @@ function withAvailability(data: MenuData, kind: Kind, id: string, value: boolean
   }
 }
 
+// The same change in the order screen's menu. That menu comes from the server
+// without turned-off add-ons (items it filters itself), so an add-on is
+// removed when turned off, and copied back from the Menu page's data, which
+// has every option, when turned on. Run after the Menu page write.
+function withOrderScreenAvailability(data: MenuData, full: MenuData | undefined, kind: Kind, id: string, value: boolean): MenuData {
+  if (kind === 'item') return withAvailability(data, kind, id, value)
+  return {
+    ...data,
+    modifiers: data.modifiers.map(m => {
+      const without = m.modifier_options.filter(o => o.id !== id)
+      if (!value) return { ...m, modifier_options: without }
+      const option = full?.modifiers.find(f => f.id === m.id)?.modifier_options.find(o => o.id === id)
+      if (!option) return m // not in this group
+      return { ...m, modifier_options: [...without, option].sort((a, b) => a.sort_order - b.sort_order) }
+    }),
+  }
+}
+
 // On/off switch on the Menu page. Timing, ordering and rollback live in
 // lib/availabilityWrites.ts; this hook connects them to the cache and the API.
 //   * The Menu page is never refetched for a toggle, so a slow refetch can't
 //     flash old values over a switch she just flipped.
-//   * After a successful save, the order screen's menu is marked stale so it
-//     refetches next time it opens.
+//   * Every tap (and any rollback) is written into the order screen's menu
+//     too, so a turned-off item or add-on stops being offered at once rather
+//     than after a refetch. Invalidation after the save is the backstop.
 //   * On failure, returns an error for the row to show.
 export function useAvailabilityToggle(kind: Kind, id: string, name: string) {
   const qc = useQueryClient()
@@ -43,7 +62,10 @@ export function useAvailabilityToggle(kind: Kind, id: string, name: string) {
         .then(res => res.is_available),
       show: v => {
         qc.cancelQueries({ queryKey: keys.menuFull })
+        qc.cancelQueries({ queryKey: keys.menu })
         qc.setQueryData<MenuData>(keys.menuFull, d => d && withAvailability(d, kind, id, v))
+        const full = qc.getQueryData<MenuData>(keys.menuFull)
+        qc.setQueryData<MenuData>(keys.menu, d => d && withOrderScreenAvailability(d, full, kind, id, v))
       },
       onSaved: () => qc.invalidateQueries({ queryKey: keys.menu }),
       onFailed: (v, err) => setError(`Couldn't turn ${v ? 'on' : 'off'} ${name}. ${errorMessage(err)}`),
