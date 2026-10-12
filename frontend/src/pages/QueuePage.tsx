@@ -54,11 +54,11 @@ function KDSCard({ order, next, action, dotClass }: {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {isUrgent && (
-                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 8, color: 'var(--danger)', letterSpacing: '0.06em' }}>
+                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700, color: 'var(--danger)', letterSpacing: '0.06em' }}>
                   {Math.floor(ageMinutes)}M
                 </span>
               )}
-              <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)' }}>
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>
                 {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
@@ -66,7 +66,7 @@ function KDSCard({ order, next, action, dotClass }: {
 
           <div style={{ padding: '8px 12px', background: 'var(--s1)', borderRadius: '0 0 var(--r) var(--r)' }}>
             {order.customer_name && (
-              <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', letterSpacing: '0.06em', marginBottom: 6 }}>
+              <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, fontWeight: 700, color: 'var(--t2)', letterSpacing: '0.06em', marginBottom: 6 }}>
                 {order.customer_name.toUpperCase()}
               </p>
             )}
@@ -132,11 +132,11 @@ export default function QueuePage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95 }}>QUEUE</h1>
-          <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 6, letterSpacing: '0.06em' }}>
+          <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', marginTop: 6, letterSpacing: '0.06em' }}>
             {total} ORDER{total !== 1 ? 'S' : ''} ACTIVE
           </p>
         </div>
-        <button onClick={() => refetch()} className="icon-btn" aria-label="Refresh queue" style={{ width: 40, height: 40 }}>
+        <button onClick={() => refetch()} className="icon-btn" aria-label="Refresh queue">
           <span style={{ fontFamily: 'JetBrains Mono', fontSize: 14 }}>↺</span>
         </button>
       </div>
@@ -173,11 +173,11 @@ export default function QueuePage() {
                 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <div className={`dot ${dotClass}`} style={{ width: 5, height: 5 }} aria-hidden="true" />
-                  <span style={{ fontFamily: 'JetBrains Mono', fontSize: 8, fontWeight: 700, color, letterSpacing: '0.08em' }}>
+                  <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700, color, letterSpacing: '0.08em' }}>
                     {label.toUpperCase()}
                   </span>
                 </div>
-                <span className="data" style={{ fontSize: 24, fontWeight: 700, color: isActive ? color : 'var(--t3)', lineHeight: 1 }}>
+                <span className="data" style={{ fontSize: 24, fontWeight: 700, color: isActive ? color : 'var(--t2)', lineHeight: 1 }}>
                   {count}
                 </span>
               </button>
@@ -191,7 +191,7 @@ export default function QueuePage() {
           const orders: Order[] = queue?.[mobileActive] ?? []
           return orders.length === 0 ? (
             <div style={{ border: '1px dashed var(--border)', borderRadius: 'var(--r)', padding: '48px', textAlign: 'center' }}>
-              <p style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.06em' }}>
+              <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', letterSpacing: '0.06em' }}>
                 NO {col.label.toUpperCase()} ORDERS
               </p>
             </div>
@@ -209,12 +209,12 @@ export default function QueuePage() {
           <div key={key}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 10, marginBottom: 10, borderBottom: `1px solid ${color}` }}>
               <div className={`dot ${dotClass}`} style={{ width: 5, height: 5 }} aria-hidden="true" />
-              <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700, color, letterSpacing: '0.1em' }}>{label.toUpperCase()}</span>
-              <span className="data" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--t3)' }}>{queue?.[key]?.length ?? 0}</span>
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700, color, letterSpacing: '0.1em' }}>{label.toUpperCase()}</span>
+              <span className="data" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--t2)' }}>{queue?.[key]?.length ?? 0}</span>
             </div>
             {(queue?.[key]?.length ?? 0) === 0 ? (
               <div style={{ border: '1px dashed var(--border)', borderRadius: 'var(--r)', padding: '28px 8px', textAlign: 'center' }}>
-                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)' }}>EMPTY</span>
+                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>EMPTY</span>
               </div>
             ) : queue?.[key]?.map((order: Order) => (
               <KDSCard key={order.id} order={order} next={next} action={action} dotClass={dotClass} />
