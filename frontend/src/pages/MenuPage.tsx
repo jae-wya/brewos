@@ -355,10 +355,12 @@ export default function MenuPage() {
   const groupNames = (i: MenuItem) => i.menu_item_modifiers
     .map(l => modifiers.find(m => m.id === l.modifier_id)?.name).filter((n): n is string => !!n)
 
+  // Each category (and add-on group) is an enamel sign over its stretch of
+  // the counter: a lit plate, the name hand-lettered in Bebas.
   const sectionHeader = (title: string, meta?: string) => (
-    <div style={{ padding: '10px 16px', background: 'var(--s2)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-      <p className="label">{title}</p>
-      {meta && <p style={{ fontSize: 12, color: 'var(--t2)' }}>{meta}</p>}
+    <div style={{ padding: '12px 16px 10px', background: 'var(--s2)', borderTop: '1px solid var(--border-hi)', borderBottom: '1px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--rim)', display: 'flex', alignItems: 'baseline', gap: 10 }}>
+      <h2 className="display" style={{ fontSize: 24, color: 'var(--t1)', lineHeight: 1, letterSpacing: '0.04em' }}>{title}</h2>
+      {meta && <p className="data" style={{ fontSize: 11, color: 'var(--t2)', marginLeft: 'auto' }}>{meta}</p>}
     </div>
   )
 
@@ -407,7 +409,7 @@ export default function MenuPage() {
         return (
           <section key={cat.id} id={sectionId(cat.id)} aria-label={cat.name}
             style={{ marginBottom: 12, scrollMarginTop: 62 }}>
-            {sectionHeader(cat.name)}
+            {sectionHeader(cat.name, `${catItems.length} item${catItems.length === 1 ? '' : 's'}`)}
             {catItems.map(item => (
               <MenuItemRow key={item.id} item={item} groupNames={groupNames(item)}
                 onOpen={i => setSheet({ item: i, categoryId: i.category_id })} />
