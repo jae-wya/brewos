@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queueApi, ordersApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
+import { orderHeat } from '../lib/heat'
 
 const COLS = [
   { key: 'pending', label: 'Pending', next: 'brewing',   action: 'Start brewing', dotClass: 'dot-pending', color: 'var(--pending)' },
@@ -12,85 +13,62 @@ const COLS = [
   { key: 'ready',   label: 'Ready',   next: 'picked_up', action: 'Picked up ✓',  dotClass: 'dot-ready',   color: 'var(--ready)'   },
 ]
 
-function KDSCard({ order, next, action, dotClass }: {
-  order: Order, next: string, action: string, dotClass: string
-}) {
+// One order as her paper chit, hanging on the rail. Heat (lib/heat.ts) is
+// how late it's running — an ember edge that grows as it gets later — and
+// the time is always written too. Recomputed on every refresh (8s); nothing
+// animates while it waits. Advancing it slides it off along the rail toward
+// the next lane.
+function Chit({ order, next, action }: { order: Order, next: string, action: string }) {
   const qc = useQueryClient()
-  const [flipping, setFlipping] = useState(false)
-
-  // Check if order is >10 min old
-  const ageMinutes = (Date.now() - new Date(order.created_at).getTime()) / 60000
-  const isUrgent = ageMinutes > 10
+  const [leaving, setLeaving] = useState(false)
+  const heat = orderHeat(order, new Date())
+  const time = new Date(order.created_at).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
 
   const advance = useMutation({
     mutationFn: () => ordersApi.updateStatus(order.id, next),
-    onMutate: () => setFlipping(true),
-    onSuccess: () => {
-      setTimeout(() => {
-        refreshOrders(qc)
-        setFlipping(false)
-      }, 280)
-    },
-    onError: () => setFlipping(false),
+    onMutate: () => setLeaving(true),
+    onSuccess: () => { setTimeout(() => refreshOrders(qc), 260) },
+    onError: () => setLeaving(false), // slides back onto the rail
   })
 
   return (
-    <div className="flip-wrapper" style={{ marginBottom: 8 }}>
-      <div className={`flip-card ${flipping ? 'flipping' : ''}`}>
-        <div className={isUrgent ? 'heat-border heat-border-urgent' : 'heat-border'}>
-          {/* Card header */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '8px 12px 6px',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--s2)',
-            borderRadius: 'var(--r) var(--r) 0 0',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <div className={`dot ${dotClass}`} role="img" aria-label={dotClass.replace('dot-', '')} />
-              <span className="data" style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
-                {order.order_number}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {isUrgent && (
-                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700, color: 'var(--danger)', letterSpacing: '0.06em' }}>
-                  {Math.floor(ageMinutes)}M
-                </span>
-              )}
-              <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>
-                {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ padding: '8px 12px', background: 'var(--s1)', borderRadius: '0 0 var(--r) var(--r)' }}>
-            {order.customer_name && (
-              <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, fontWeight: 700, color: 'var(--t2)', letterSpacing: '0.06em', marginBottom: 6 }}>
-                {order.customer_name.toUpperCase()}
-              </p>
-            )}
-            {order.notes && (
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginBottom: 6 }}>{order.notes}</p>
-            )}
-            {order.order_items.map(item => (
-              <OrderLine key={item.id} variant="queue"
-                quantity={item.quantity} name={item.item_name} category={item.item_category}
-                modifiers={item.order_item_modifiers.map(m => m.option_name)} notes={item.notes} />
-            ))}
-            <button
-              onClick={() => advance.mutate()}
-              disabled={advance.isPending}
-              className="btn btn-fire"
-              style={{ width: '100%', marginTop: 10, padding: '9px', fontSize: 11 }}
-              aria-label={`${action} for ${order.order_number}`}
-            >
-              {advance.isPending ? '···' : action}
-            </button>
-          </div>
+    <article className="chit" data-heat={heat.level || undefined} aria-label={`Order ${order.order_number}`}
+      style={{ marginBottom: 18, animation: leaving ? 'chitLeave 0.26s ease-in forwards' : undefined }}>
+      <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <p className="display" style={{ fontSize: 30, color: 'var(--ink)', lineHeight: 0.9 }}>{order.order_number}</p>
+          <p className="data" style={{ fontSize: 11, color: 'var(--ink-2)', marginTop: 4 }}>
+            {order.customer_name ? `${order.customer_name} · ` : ''}{time}
+          </p>
         </div>
+        {/* Late: stamped, ink on ember. Otherwise quiet. Always in words. */}
+        <span className="data" style={heat.level === 3
+          ? { flexShrink: 0, background: 'var(--ember)', color: 'var(--ink)', fontSize: 12, fontWeight: 700, padding: '5px 8px', borderRadius: 2, letterSpacing: '0.06em', textTransform: 'uppercase' }
+          : { flexShrink: 0, color: 'var(--ink-2)', fontSize: 12, fontWeight: heat.level ? 700 : 500, paddingTop: 4 }}>
+          {heat.label}
+        </span>
       </div>
-    </div>
+
+      <div style={{ padding: '0 14px 14px' }}>
+        {order.notes && (
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '6px 0 2px' }}>{order.notes}</p>
+        )}
+        {order.order_items.map(item => (
+          <OrderLine key={item.id} variant="chit"
+            quantity={item.quantity} name={item.item_name} category={item.item_category}
+            modifiers={item.order_item_modifiers.map(m => m.option_name)} notes={item.notes} />
+        ))}
+        <button
+          onClick={() => advance.mutate()}
+          disabled={advance.isPending}
+          className="btn btn-fire"
+          style={{ width: '100%', marginTop: 12, minHeight: 48, fontSize: 14 }}
+          aria-label={`${action} for ${order.order_number}`}
+        >
+          {advance.isPending ? '···' : action}
+        </button>
+      </div>
+    </article>
   )
 }
 
@@ -107,6 +85,21 @@ export default function QueuePage() {
   })
 
   const total = COLS.reduce((s, c) => s + (queue?.[c.key]?.length ?? 0), 0)
+
+  // A lane's count bumps when a chit arrives in it — the other end of the
+  // chit sliding off its old lane.
+  const prevCounts = useRef<Record<string, number>>({})
+  const [bumped, setBumped] = useState<Record<string, number>>({})
+  useEffect(() => {
+    if (!queue) return
+    const grew: Record<string, number> = {}
+    for (const c of COLS) {
+      const n = queue[c.key]?.length ?? 0
+      if (prevCounts.current[c.key] !== undefined && n > prevCounts.current[c.key]) grew[c.key] = Date.now()
+      prevCounts.current[c.key] = n
+    }
+    if (Object.keys(grew).length) setBumped(b => ({ ...b, ...grew }))
+  }, [queue])
   const defaultTab = COLS.find(c => (queue?.[c.key]?.length ?? 0) > 0)?.key ?? 'pending'
   const mobileActive = activeTab ?? defaultTab
 
@@ -156,7 +149,7 @@ export default function QueuePage() {
 
       {/* ── Mobile: status tabs ── */}
       <div className="md-hidden">
-        <div style={{ display: 'flex', background: 'var(--s1)', border: '1px solid var(--border)', borderRadius: 'var(--r)', marginBottom: 14, overflow: 'hidden' }}>
+        <div className="panel" style={{ display: 'flex', overflow: 'hidden' }}>
           {COLS.map(({ key, label, color, dotClass }) => {
             const count = queue?.[key]?.length ?? 0
             const isActive = mobileActive === key
@@ -177,13 +170,16 @@ export default function QueuePage() {
                     {label.toUpperCase()}
                   </span>
                 </div>
-                <span className="data" style={{ fontSize: 24, fontWeight: 700, color: isActive ? color : 'var(--t2)', lineHeight: 1 }}>
+                <span key={bumped[key] ?? 0} className="display" style={{ fontSize: 36, color: isActive ? color : 'var(--t2)', lineHeight: 0.9, animation: bumped[key] ? 'countBump 0.3s ease-out' : undefined }}>
                   {count}
                 </span>
               </button>
             )
           })}
         </div>
+
+        {/* The rail */}
+        <div aria-hidden="true" style={{ height: 3, margin: '12px -16px 22px', background: 'var(--border-hi)', boxShadow: 'inset 0 1px 0 var(--rim), 0 6px 10px -6px var(--cast)' }} />
 
         {/* Active column */}
         {(() => {
@@ -197,7 +193,7 @@ export default function QueuePage() {
             </div>
           ) : (
             orders.map((order: Order) => (
-              <KDSCard key={order.id} order={order} next={col.next} action={col.action} dotClass={col.dotClass} />
+              <Chit key={order.id} order={order} next={col.next} action={col.action} />
             ))
           )
         })()}
@@ -217,7 +213,7 @@ export default function QueuePage() {
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>EMPTY</span>
               </div>
             ) : queue?.[key]?.map((order: Order) => (
-              <KDSCard key={order.id} order={order} next={next} action={action} dotClass={dotClass} />
+              <Chit key={order.id} order={order} next={next} action={action} />
             ))}
           </div>
         ))}
