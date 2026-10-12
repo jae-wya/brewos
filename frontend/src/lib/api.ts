@@ -70,8 +70,8 @@ export const authApi = {
 }
 
 export const menuApi = {
-  getMenu: () => api.get('/menu').then(r => r.data),
-  getFullMenu: () => api.get('/menu', { params: { include_all: true } }).then(r => r.data),
+  // Everything, turned-off items and add-ons included; see keys.menu.
+  getMenu: () => api.get('/menu', { params: { include_all: true } }).then(r => r.data),
   // Send the value we want, not "flip": a retried request then can't undo itself.
   setItemAvailable: (itemId: string, isAvailable: boolean) =>
     api.patch(`/menu/items/${itemId}/toggle`, { is_available: isAvailable })

@@ -5,8 +5,10 @@ import { QueryClient } from '@tanstack/react-query'
 // 'stats'], which is ONE key that matches nothing — fails silently and the
 // screen just waits for its polling interval. Use these, never literal arrays.
 export const keys = {
-  menu: ['menu'] as const,          // order screen: available options only
-  menuFull: ['menu-full'] as const, // Menu page: everything, so toggles can turn things back on
+  // ONE menu for both screens: everything, turned-off items and add-ons
+  // included. The order screen hides those itself. Two cached copies had to
+  // be kept in step by hand, and every way they drifted was a bug.
+  menu: ['menu'] as const,
   orders: ['orders'] as const,
   queue: ['queue'] as const,
   stats: ['stats'] as const,
@@ -18,10 +20,4 @@ export function refreshOrders(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: keys.orders })
   qc.invalidateQueries({ queryKey: keys.queue })
   qc.invalidateQueries({ queryKey: keys.stats })
-}
-
-// After anything that changes the menu: both the Menu page and the order screen.
-export function refreshMenus(qc: QueryClient) {
-  qc.invalidateQueries({ queryKey: keys.menu })
-  qc.invalidateQueries({ queryKey: keys.menuFull })
 }

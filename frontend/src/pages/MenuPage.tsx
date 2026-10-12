@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
-import { menuApi, errorMessage } from '../lib/api'
-import { keys, refreshMenus } from '../lib/queryKeys'
-import { putItem, removeItem } from '../lib/menuCache'
+import { menuApi, errorMessage, ItemFields } from '../lib/api'
+import { keys } from '../lib/queryKeys'
+import { putItem, putOptimistic, removeItem, settleItem, nextSortOrder, placeholderId, isPlaceholder } from '../lib/menuCache'
 import { useAvailabilityToggle } from '../hooks/useAvailabilityToggle'
 import ItemSheet from '../components/menu/ItemSheet'
 import { MenuData, MenuItem, Modifier, ModifierOption } from '../types'
@@ -61,11 +61,11 @@ function ModifierOptionRow({ option }: { option: ModifierOption }) {
 
 // Inline price field under the row. Opens with the number keypad and the
 // current price selected, so typing replaces it.
-function PriceEditor({ item, saving, error, onSave, onCancel }: {
-  item: MenuItem, saving: boolean, error: string | null
+function PriceEditor({ item, initial, error, onSave, onCancel }: {
+  item: MenuItem, initial: string, error: string | null
   onSave: (price: string) => void, onCancel: () => void
 }) {
-  const [draft, setDraft] = useState(String(item.base_price))
+  const [draft, setDraft] = useState(initial)
 
   return (
     <div style={{ padding: '0 16px 12px', background: 'var(--s1)', borderBottom: '1px solid var(--border)' }}>
@@ -81,12 +81,12 @@ function PriceEditor({ item, saving, error, onSave, onCancel }: {
           value={draft} onChange={e => setDraft(e.target.value)}
           autoFocus onFocus={e => e.currentTarget.select()}
           onKeyDown={e => { if (e.key === 'Escape') onCancel() }}
-          readOnly={saving} aria-invalid={!!error} aria-describedby={error ? `price-err-${item.id}` : undefined}
+          aria-invalid={!!error} aria-describedby={error ? `price-err-${item.id}` : undefined}
           className="field data" style={{ flex: 1, fontSize: 15 }} />
-        <button type="submit" disabled={saving} className="btn btn-fire" style={{ minHeight: 'var(--touch)' }}>
+        <button type="submit" className="btn btn-fire" style={{ minHeight: 'var(--touch)' }}>
           Save
         </button>
-        <button type="button" onClick={onCancel} disabled={saving} className="btn btn-ghost" style={{ minHeight: 'var(--touch)' }}>
+        <button type="button" onClick={onCancel} className="btn btn-ghost" style={{ minHeight: 'var(--touch)' }}>
           Cancel
         </button>
       </form>
@@ -104,27 +104,33 @@ function MenuItemRow({ item, allModifiers, idx, onOpen }: {
   const tog = useAvailabilityToggle('item', item.id, item.name)
   const on = tog.on(item.is_available)
   const [editing, setEditing] = useState(false)
+  const [priceDraft, setPriceDraft] = useState('')
   const [priceError, setPriceError] = useState<string | null>(null)
+  // A new item still waiting for its real id: nothing here may send that id.
+  const placeholder = isPlaceholder(item)
 
-  const savePrice = useMutation({
-    mutationFn: (price: string) => menuApi.updateItem(item.id, { base_price: price }),
-    onMutate: () => setPriceError(null),
-    onSuccess: saved => {
-      putItem(qc, saved)
-      refreshMenus(qc)
-      setEditing(false)
-    },
-    onError: err => setPriceError(errorMessage(err)),
-  })
+  const openEditor = () => { setPriceDraft(String(item.base_price)); setPriceError(null); setEditing(true) }
+  const closeEditor = () => { setEditing(false); setPriceError(null) }
 
+  // Optimistic: the new price shows and the field closes on Save. If the
+  // server refuses, the price goes back and the field reopens with what she
+  // typed and the server's sentence.
   const submitPrice = (draft: string) => {
     const price = draft.trim()
-    if (!price) return setPriceError('Price must be a number.')
-    if (Number(price) === Number(item.base_price)) return setEditing(false) // unchanged: nothing to send
-    savePrice.mutate(price)
+    if (!price || !Number.isFinite(Number(price))) { setPriceDraft(draft); return setPriceError('Price must be a number.') }
+    closeEditor()
+    if (Number(price) === Number(item.base_price)) return // unchanged: nothing to send
+    const optimistic = putOptimistic(qc, { ...item, base_price: Number(price) })
+    menuApi.updateItem(item.id, { base_price: price }).then(
+      saved => settleItem(qc, optimistic, saved),
+      err => {
+        settleItem(qc, optimistic, item)
+        setPriceDraft(draft)
+        setPriceError(errorMessage(err))
+        setEditing(true)
+      },
+    )
   }
-
-  const closeEditor = () => { setEditing(false); setPriceError(null) }
 
   // Get modifiers linked to this item — include ALL options (available + unavailable)
   const modIds = item.menu_item_modifiers.map((m: any) => m.modifier_id)
@@ -140,7 +146,7 @@ function MenuItemRow({ item, allModifiers, idx, onOpen }: {
         transition: 'opacity 0.2s',
         background: 'var(--s1)',
       }}>
-        <button onClick={() => onOpen(item)} aria-label={`Edit ${item.name}`}
+        <button onClick={() => onOpen(item)} disabled={placeholder} aria-label={`Edit ${item.name}`}
           style={{
             flex: 1, minWidth: 0, minHeight: 'var(--touch)', textAlign: 'left',
             background: 'none', border: 'none', padding: 0, cursor: 'pointer',
@@ -149,20 +155,21 @@ function MenuItemRow({ item, allModifiers, idx, onOpen }: {
           {item.name}
         </button>
         {/* At least the toggle's 52×44 tap area */}
-        <button onClick={() => { if (!editing) { setPriceError(null); setEditing(true) } }}
+        <button onClick={() => { if (!editing) openEditor() }} disabled={placeholder}
           aria-label={`Change price of ${item.name}, now ₱${item.base_price}`} aria-expanded={editing}
           className="data"
           style={{
             minWidth: 64, minHeight: 'var(--touch)', padding: '0 8px', marginLeft: 8,
             background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right',
             fontSize: 13, fontWeight: 700,
-            color: savePrice.isPending ? 'var(--t3)' : 'var(--accent)',
-            textDecoration: editing && !savePrice.isPending ? 'underline' : 'none',
+            color: 'var(--accent)',
+            textDecoration: editing ? 'underline' : 'none',
           }}>
-          {savePrice.isPending ? <span role="status">Saving…</span> : <>&#8369;{item.base_price}</>}
+          &#8369;{item.base_price}
         </button>
         <button
           onClick={() => tog.set(on, !on)}
+          disabled={placeholder}
           role="switch"
           aria-checked={on}
           aria-label={`${on ? 'Disable' : 'Enable'} ${item.name}`}
@@ -173,7 +180,7 @@ function MenuItemRow({ item, allModifiers, idx, onOpen }: {
         </button>
       </div>
       {editing && (
-        <PriceEditor item={item} saving={savePrice.isPending} error={priceError}
+        <PriceEditor item={item} initial={priceDraft} error={priceError}
           onSave={submitPrice} onCancel={closeEditor} />
       )}
       {tog.error && <ToggleError message={tog.error} indent={16} />}
@@ -210,14 +217,16 @@ function MenuItemRow({ item, allModifiers, idx, onOpen }: {
   )
 }
 
-type Sheet = { item: MenuItem } | { categoryId: string } | null
+// The open sheet: an item to edit, or a category to add to. After a failed
+// save it reopens with what she typed and the server's sentence.
+type Sheet = { item: MenuItem | null, categoryId: string, draft?: ItemFields, error?: string } | null
 type Bar = { id: number, text: string, onUndo?: () => void } | null
 
 export default function MenuPage() {
   const qc = useQueryClient()
   const { data: menuData, isLoading } = useQuery<MenuData>({
-    queryKey: keys.menuFull,
-    queryFn: menuApi.getFullMenu,
+    queryKey: keys.menu,
+    queryFn: menuApi.getMenu,
   })
   const [sheet, setSheet] = useState<Sheet>(null)
   const [bar, setBar] = useState<Bar>(null)
@@ -232,28 +241,56 @@ export default function MenuPage() {
     return () => clearTimeout(t)
   }, [bar])
 
+  // Save from the sheet, optimistic: the sheet closes and the change shows at
+  // once (a new item appears with a placeholder id until the server gives it
+  // a real one). If the server refuses, the change is taken back and the
+  // sheet reopens with what she typed and the server's sentence.
+  const saveItem = (item: MenuItem | null, f: ItemFields) => {
+    const moved = !item || item.category_id !== f.category_id
+    const optimistic = putOptimistic(qc, {
+      ...(item ?? { business_id: '', description: null, image_url: null, is_available: true }),
+      id: item?.id ?? placeholderId(),
+      name: f.name.split(/\s+/).filter(Boolean).join(' '), // the server tidies spaces the same way
+      base_price: Number(f.base_price),
+      category_id: f.category_id,
+      menu_item_modifiers: f.modifier_ids.map(modifier_id => ({ modifier_id })),
+      sort_order: moved ? nextSortOrder(qc, f.category_id) : item.sort_order,
+    })
+    setSheet(null)
+    ;(item ? menuApi.updateItem(item.id, f) : menuApi.createItem(f)).then(
+      saved => settleItem(qc, optimistic, saved),
+      err => {
+        settleItem(qc, optimistic, item)
+        setSheet({ item, categoryId: f.category_id, draft: f, error: errorMessage(err) })
+      },
+    )
+  }
+
   // No confirmation: the item goes at once and the bar offers Undo instead.
-  const deleteItem = (item: MenuItem) => {
+  const deleteItem = (sheetItem: MenuItem) => {
+    // The cached copy, not the sheet's: a toggle since the sheet opened made a newer one.
+    const item = qc.getQueryData<MenuData>(keys.menu)?.items.find(i => i.id === sheetItem.id) ?? sheetItem
     setSheet(null)
     removeItem(qc, item.id)
     let undone = false
     const deleted = menuApi.deleteItem(item.id)
-    deleted.then(
-      () => { if (!undone) refreshMenus(qc) }, // after Undo, the restore reloads instead
-      err => {
-        refreshMenus(qc) // it was never deleted: the reload puts it back
-        if (!undone) showBar(`Couldn't delete ${item.name}. ${errorMessage(err)}`)
-      },
-    )
+    deleted.catch(err => {
+      if (undone) return // Undo already put it back, and it was never deleted
+      putItem(qc, item)
+      showBar(`Couldn't delete ${item.name}. ${errorMessage(err)}`)
+    })
 
     showBar(`${item.name} deleted`, () => {
       undone = true
       setBar(null)
-      putItem(qc, item) // back on screen now; the server catches up below
+      const back = putOptimistic(qc, item) // back in its place now; the server catches up below
       // Undo can be tapped before the delete has even reached the server.
       deleted.then(() => menuApi.restoreItem(item.id).then(
-        restored => { putItem(qc, restored); refreshMenus(qc) },
-        err => { removeItem(qc, item.id); refreshMenus(qc); showBar(`Couldn't bring back ${item.name}. ${errorMessage(err)}`) },
+        restored => settleItem(qc, back, restored),
+        err => {
+          settleItem(qc, back, null)
+          showBar(`Couldn't bring back ${item.name}. ${errorMessage(err)}`)
+        },
       ), () => {})
     })
   }
@@ -307,11 +344,11 @@ export default function MenuPage() {
                   item={item}
                   allModifiers={allModifiers}
                   idx={idx}
-                  onOpen={i => setSheet({ item: i })}
+                  onOpen={i => setSheet({ item: i, categoryId: i.category_id })}
                 />
               ))}
             </div>
-            <button onClick={() => setSheet({ categoryId: cat.id })}
+            <button onClick={() => setSheet({ item: null, categoryId: cat.id })}
               aria-label={`Add item to ${cat.name}`}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, width: '100%',
@@ -354,10 +391,14 @@ export default function MenuPage() {
 
       {sheet && menuData && (
         <ItemSheet
-          key={'item' in sheet ? sheet.item.id : `new-${sheet.categoryId}`}
+          // A reopen after a failed save remounts, so it starts from the draft.
+          key={`${sheet.item?.id ?? `new-${sheet.categoryId}`}-${sheet.error ?? ''}`}
           menu={menuData}
-          item={'item' in sheet ? sheet.item : null}
-          categoryId={'item' in sheet ? sheet.item.category_id : sheet.categoryId}
+          item={sheet.item}
+          categoryId={sheet.categoryId}
+          draft={sheet.draft}
+          error={sheet.error}
+          onSave={f => saveItem(sheet.item, f)}
           onClose={() => setSheet(null)}
           onDelete={deleteItem}
         />

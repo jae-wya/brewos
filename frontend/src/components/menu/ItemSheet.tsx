@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import { menuApi, errorMessage } from '../../lib/api'
-import { refreshMenus } from '../../lib/queryKeys'
-import { putItem } from '../../lib/menuCache'
+import { ItemFields } from '../../lib/api'
 import { MenuData, MenuItem } from '../../types'
 
 // Add-on groups a new item starts with: the ones most items in that category
@@ -23,42 +20,35 @@ function categoryModifiers(menu: MenuData, categoryId: string): string[] {
 
 // Bottom sheet for editing an item, or adding one when `item` is null.
 // Same frame as the add-on picker on the order screen.
-export default function ItemSheet({ menu, item, categoryId, onClose, onDelete }: {
+//
+// It doesn't save anything itself: Save hands the fields to the Menu page,
+// which closes the sheet, shows the change at once and sends it. If the
+// server refuses, the page reopens the sheet with `draft` (what she typed)
+// and `error` (the server's sentence).
+export default function ItemSheet({ menu, item, categoryId, draft, error: initialError, onSave, onClose, onDelete }: {
   menu: MenuData
   item: MenuItem | null
   categoryId: string          // pre-selected category for a new item
+  draft?: ItemFields
+  error?: string
+  onSave: (fields: ItemFields) => void
   onClose: () => void
   onDelete: (item: MenuItem) => void
 }) {
-  const qc = useQueryClient()
-  const [name, setName] = useState(item?.name ?? '')
-  const [price, setPrice] = useState(item ? String(item.base_price) : '')
-  const [catId, setCatId] = useState(item?.category_id ?? categoryId)
-  const [modIds, setModIds] = useState<string[]>(
-    item ? item.menu_item_modifiers.map(m => m.modifier_id) : categoryModifiers(menu, categoryId))
+  const [name, setName] = useState(draft?.name ?? item?.name ?? '')
+  const [price, setPrice] = useState(draft?.base_price ?? (item ? String(item.base_price) : ''))
+  const [catId, setCatId] = useState(draft?.category_id ?? item?.category_id ?? categoryId)
+  const [modIds, setModIds] = useState<string[]>(draft?.modifier_ids ??
+    (item ? item.menu_item_modifiers.map(m => m.modifier_id) : categoryModifiers(menu, categoryId)))
   // Once she's ticked an add-on herself, changing category no longer resets them.
-  const [modsTouched, setModsTouched] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [modsTouched, setModsTouched] = useState(!!draft)
+  const [error, setError] = useState<string | null>(initialError ?? null)
 
-  const save = useMutation({
-    mutationFn: () => {
-      const body = { name, base_price: price.trim(), category_id: catId, modifier_ids: modIds }
-      return item ? menuApi.updateItem(item.id, body) : menuApi.createItem(body)
-    },
-    onSuccess: saved => {
-      putItem(qc, saved)
-      refreshMenus(qc)
-      onClose()
-    },
-    onError: err => setError(errorMessage(err)),
-  })
-
-  // Same sentences the server uses, without a round trip for an empty field.
+  // Same sentences the server uses, for what can be checked without asking it.
   const submit = () => {
     if (!name.trim()) return setError("Name can't be empty.")
-    if (!price.trim()) return setError('Price must be a number.')
-    setError(null)
-    save.mutate()
+    if (!price.trim() || !Number.isFinite(Number(price.trim()))) return setError('Price must be a number.')
+    onSave({ name, base_price: price.trim(), category_id: catId, modifier_ids: modIds })
   }
 
   const pickCategory = (id: string) => {
@@ -160,12 +150,12 @@ export default function ItemSheet({ menu, item, categoryId, onClose, onDelete }:
           {error && (
             <p role="alert" style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 10 }}>{error}</p>
           )}
-          <button onClick={submit} disabled={save.isPending}
+          <button onClick={submit}
             className="btn btn-fire" style={{ width: '100%', padding: '16px', fontSize: 15 }}>
-            {save.isPending ? 'Saving…' : item ? 'Save' : 'Add item'}
+            {item ? 'Save' : 'Add item'}
           </button>
           {item && (
-            <button onClick={() => onDelete(item)} disabled={save.isPending}
+            <button onClick={() => onDelete(item)}
               style={{
                 display: 'block', margin: '20px auto 0', minHeight: 'var(--touch)', padding: '0 20px',
                 background: 'none', border: 'none', cursor: 'pointer',

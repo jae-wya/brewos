@@ -5,6 +5,8 @@ import { menuApi, ordersApi, errorMessage, BUSINESS_ID } from '../lib/api'
 import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
+import { isPlaceholder } from '../lib/menuCache'
+import { shownAvailability } from '../hooks/useAvailabilityToggle'
 import { ChevronLeft, X, Check, Minus, Plus, Trash2 } from 'lucide-react'
 
 function ItemModal({ item, menuData, onAdd, onClose }: {
@@ -12,7 +14,10 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
   onAdd: (c: CartItem) => void, onClose: () => void
 }) {
   const modIds = item.menu_item_modifiers.map(m => m.modifier_id)
-  const mods = menuData.modifiers.filter(m => modIds.includes(m.id))
+  // The shared menu has every add-on; offer only the ones that are on.
+  const mods = menuData.modifiers.filter(m => modIds.includes(m.id)).map(m => ({
+    ...m, modifier_options: m.modifier_options.filter(o => shownAvailability('option', o.id, o.is_available)),
+  }))
   const [sel, setSel] = useState<Record<string, ModifierOption>>({})
   const [qty, setQty] = useState(1)
   const [notes, setNotes] = useState('')
@@ -188,7 +193,11 @@ export default function NewOrderPage() {
   const cats = menuData?.categories ?? []
   const items = menuData?.items ?? []
   const cat = activeCat ?? cats[0]?.id
-  const visible = items.filter(i => i.category_id === cat && i.is_available)
+  // Same menu as the Menu page, so it's never behind her edits. Hide what's
+  // off (including a switch still saving) and any new item that doesn't have
+  // its real id yet — an order can't reference a placeholder.
+  const visible = items.filter(i => i.category_id === cat && !isPlaceholder(i)
+    && shownAvailability('item', i.id, i.is_available))
 
   if (successOrder) return <SuccessOverlay orderNumber={successOrder} onDone={() => navigate('/queue')} />
   if (isLoading) return (

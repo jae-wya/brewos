@@ -17,7 +17,6 @@ export const DEBOUNCE_MS = 400
 export interface Handlers {
   send: (value: boolean) => Promise<boolean> // resolves to the server's value
   show: (value: boolean) => void             // put this value on screen
-  onSaved: () => void
   onFailed: (value: boolean, err: unknown) => void
 }
 
@@ -62,7 +61,7 @@ function flush(key: string, p: Pending) {
   const value = p.wanted
   p.inFlight = true
   p.handlers.send(value).then(
-    serverValue => { p.confirmed = serverValue; p.handlers.onSaved(); done(null, false) },
+    serverValue => { p.confirmed = serverValue; done(null, false) },
     err => done(err, true),
   )
 
