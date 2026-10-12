@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { NavLink } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { ChevronLeft, LogOut } from 'lucide-react'
 import { settingsApi, errorMessage } from '../lib/api'
 import { keys } from '../lib/queryKeys'
+import { clearSession } from '../lib/session'
 import { fillTemplate, unknownPlaceholders, PLACEHOLDERS } from '../lib/composer'
 
 // Her settings: the Messenger payment request she copies from the cart, and
@@ -32,6 +33,15 @@ export default function SettingsPage() {
   const [maya, setMaya] = useState('')
   const [status, setStatus] = useState<{ saving?: boolean, saved?: boolean, error?: string }>({})
   const box = useRef<HTMLTextAreaElement>(null)
+  const navigate = useNavigate()
+
+  // Moved here from the header: rare and destructive, so out of mis-tap range
+  // mid-shift, and well away from Save.
+  const logOut = () => {
+    clearSession()
+    qc.clear()
+    navigate('/login', { replace: true })
+  }
 
   // Load once into the form; later refetches don't overwrite her typing.
   const loaded = useRef(false)
@@ -145,6 +155,18 @@ export default function SettingsPage() {
           </div>
         </>
       )}
+
+      {/* Shown even if settings fail to load: logging out must always work. */}
+      <div style={{ marginTop: 40, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+        <button onClick={logOut}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, minHeight: 'var(--touch)', padding: '0 4px',
+            background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--danger)',
+          }}>
+          <LogOut size={14} aria-hidden="true" />
+          Log out of this phone
+        </button>
+      </div>
     </div>
   )
 }

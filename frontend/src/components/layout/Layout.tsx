@@ -1,8 +1,6 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
-import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon, LogOut, Settings } from 'lucide-react'
+import { Outlet, NavLink } from 'react-router-dom'
+import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon, Settings } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
-import { clearSession } from '../../lib/session'
 
 const nav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dash'   },
@@ -13,14 +11,6 @@ const nav = [
 
 export default function Layout() {
   const { theme, toggle } = useTheme()
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-
-  function logOut() {
-    clearSession()
-    qc.clear()
-    navigate('/login', { replace: true })
-  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -32,10 +22,10 @@ export default function Layout() {
         borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, zIndex: 100,
       }}>
-        {/* Brand. It gets whatever the buttons leave: at 360px (common on
-            Android) that's tight, so the subtitle never wraps — it would
-            rather end in "…" — and the gaps below are sized so it doesn't
-            have to down to 360. */}
+        {/* Brand. It gets whatever the buttons leave, and the subtitle never
+            wraps — at worst it ends in "…". Log out lives in Settings, not
+            here: it's rare and destructive, and next to New order it was a
+            mis-tap away mid-shift. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           {/* Logo mark — gradient square */}
           <div style={{
@@ -65,9 +55,6 @@ export default function Layout() {
           <NavLink to="/settings" aria-label="Settings" className="icon-btn" style={{ width: 36, height: 36 }}>
             <Settings size={13} aria-hidden="true" />
           </NavLink>
-          <button onClick={logOut} aria-label="Log out" className="icon-btn" style={{ width: 36, height: 36 }}>
-            <LogOut size={13} aria-hidden="true" />
-          </button>
           <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '8px 12px', fontSize: 12 }}>
             <Plus size={12} strokeWidth={3} aria-hidden="true" />
             New order
