@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -7,8 +7,61 @@ import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
 import { offeredItems, offeredModifiers } from '../lib/orderScreen'
-import { fillTemplate } from '../lib/composer'
-import { ChevronLeft, X, Check, Minus, Plus, Trash2, Copy } from 'lucide-react'
+import { fillTemplate, peso } from '../lib/composer'
+import { ChevronLeft, ChevronRight, X, Check, Minus, Plus, Trash2, Copy } from 'lucide-react'
+
+// Category tabs, pinned just above the cart bar: she switches category
+// constantly, one-handed, so they sit where the thumb is rather than at the
+// top. Thirteen categories don't fit a phone, so the bar scrolls — and says
+// so: a fade with a chevron on whichever edge hides more tabs (before, "Tea"
+// was simply cut off mid-word). Choosing a tab scrolls it into view.
+function CategoryBar({ cats, active, onPick }: {
+  cats: { id: string, name: string }[], active: string | undefined, onPick: (id: string) => void
+}) {
+  const bar = useRef<HTMLDivElement>(null)
+  const [more, setMore] = useState({ left: false, right: false })
+  const measure = () => {
+    const el = bar.current
+    if (!el) return
+    setMore({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 })
+  }
+  useEffect(() => {
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [cats.length])
+  useEffect(() => {
+    bar.current?.querySelector<HTMLElement>('[aria-selected="true"]')
+      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+  }, [active])
+
+  const fade = (side: 'left' | 'right') => (
+    <div aria-hidden="true" style={{
+      position: 'absolute', top: 0, bottom: 0, [side]: 0, width: 44, pointerEvents: 'none',
+      display: 'flex', alignItems: 'center', justifyContent: side === 'right' ? 'flex-end' : 'flex-start',
+      padding: '0 4px', color: 'var(--t2)',
+      background: `linear-gradient(to ${side}, transparent, var(--s1) 60%)`,
+    }}>
+      {side === 'right' ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+    </div>
+  )
+
+  return (
+    <div style={{ position: 'relative', background: 'var(--s1)', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+      <div ref={bar} onScroll={measure} className="scrollbar-none" role="tablist" aria-label="Menu categories"
+        style={{ padding: '8px 14px 10px', display: 'flex', gap: 8, overflowX: 'auto', scrollPaddingInline: 44 }}>
+        {cats.map(c => (
+          <button key={c.id} onClick={() => onPick(c.id)} role="tab" aria-selected={active === c.id}
+            className={`chip flex-shrink-0 ${active === c.id ? 'chip-on' : ''}`}>
+            {c.name}
+          </button>
+        ))}
+      </div>
+      {more.left && fade('left')}
+      {more.right && fade('right')}
+    </div>
+  )
+}
 
 const PAY_METHODS: [string, string][] = [['cash', 'Cash'], ['gcash', 'GCash'], ['maya', 'Maya'], ['card', 'Card']]
 
@@ -51,7 +104,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
               &#8369;{(unit * qty).toLocaleString()}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36, flexShrink: 0 }}>
+          <button onClick={onClose} aria-label="Close" className="icon-btn" style={{ flexShrink: 0 }}>
             <X size={13} aria-hidden="true" />
           </button>
         </div>
@@ -76,7 +129,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
                       className={`chip ${isSelected ? 'chip-on' : ''}`}>
                       {isSelected && <Check size={10} aria-hidden="true" style={{ marginRight: 2 }} />}
                       {opt.name}
-                      {opt.price_delta > 0 && <span style={{ opacity: 0.7 }}> +&#8369;{opt.price_delta}</span>}
+                      {opt.price_delta > 0 && <span style={{ fontWeight: 500 }}> +&#8369;{opt.price_delta}</span>}
                     </button>
                   )
                 })}
@@ -123,8 +176,8 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
             </button>
           </div>
           {!canAdd && mods.some(m => m.is_required) && (
-            <p style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--t3)', marginTop: 10, letterSpacing: '0.04em' }}>
-              * SELECT REQUIRED OPTIONS TO CONTINUE
+            <p style={{ fontSize: 12, color: 'var(--t2)', marginTop: 10 }}>
+              Pick the options marked * to continue.
             </p>
           )}
         </div>
@@ -148,7 +201,7 @@ function SuccessOverlay({ orderNumber, onDone }: { orderNumber: string, onDone: 
       <div style={{ textAlign: 'center' }}>
         <p className="display" style={{ fontSize: 40, color: 'var(--t1)', marginBottom: 8 }}>ORDER PLACED</p>
         <p className="data" style={{ fontSize: 22, color: 'var(--accent)', fontWeight: 700 }}>{orderNumber}</p>
-        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', marginTop: 10, letterSpacing: '0.08em' }}>
+        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', marginTop: 10, letterSpacing: '0.08em' }}>
           ADDED TO QUEUE
         </p>
       </div>
@@ -249,7 +302,7 @@ export default function NewOrderPage() {
       {/* Sub-header */}
       <div style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '0 14px', height: 52, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <button onClick={() => navigate(-1)} aria-label="Go back"
-          style={{ color: 'var(--t2)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', padding: '10px 8px 10px 0' }}>
+          style={{ color: 'var(--t2)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, marginLeft: -12, flexShrink: 0 }}>
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
         <span className="display" style={{ fontSize: 26, color: 'var(--t1)', flex: 1, letterSpacing: '0.03em' }}>NEW ORDER</span>
@@ -271,17 +324,6 @@ export default function NewOrderPage() {
           style={{ flex: 1, padding: '8px 12px', fontSize: 12, borderRadius: 999, minHeight: 'var(--touch)' }} />
       </div>
 
-      {/* Category tabs */}
-      <div className="scrollbar-none" role="tablist" aria-label="Menu categories"
-        style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0 }}>
-        {cats.map(c => (
-          <button key={c.id} onClick={() => setActiveCat(c.id)} role="tab" aria-selected={cat === c.id}
-            className={`chip flex-shrink-0 ${cat === c.id ? 'chip-on' : ''}`}>
-            {c.name}
-          </button>
-        ))}
-      </div>
-
       {/* Menu grid */}
       <div role="tabpanel" style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -293,17 +335,19 @@ export default function NewOrderPage() {
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', lineHeight: 1.3, marginBottom: 8 }}>{item.name}</p>
               <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>&#8369;{item.base_price}</p>
               {item.menu_item_modifiers.length > 0 && (
-                <p style={{ fontFamily: 'JetBrains Mono', fontSize: 8, color: 'var(--t3)', marginTop: 6, letterSpacing: '0.04em' }}>HAS OPTIONS</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginTop: 6 }}>Has options</p>
               )}
             </button>
           ))}
           {!visible.length && (
-            <p role="status" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px 0', fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t3)' }}>
+            <p role="status" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px 0', fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>
               NO ITEMS IN THIS CATEGORY
             </p>
           )}
         </div>
       </div>
+
+      <CategoryBar cats={cats} active={cat} onPick={setActiveCat} />
 
       {/* Cart bar */}
       {count > 0 && !showCart && (
@@ -311,7 +355,7 @@ export default function NewOrderPage() {
           <button onClick={() => setShowCart(true)} className="btn btn-fire"
             style={{ width: '100%', padding: '14px', justifyContent: 'space-between', fontSize: 14 }}>
             <span className="data">{count} item{count !== 1 ? 's' : ''}</span>
-            <span>&#8369;{total.toLocaleString()} · Review</span>
+            <span>{peso(total)} · Review</span>
           </button>
         </div>
       )}
@@ -338,7 +382,7 @@ export default function NewOrderPage() {
             <div style={{ width: 32, height: 3, background: 'var(--s3)', borderRadius: 999, margin: '12px auto 0' }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
               <span className="display" style={{ fontSize: 26, color: 'var(--t1)' }}>SUMMARY</span>
-              <button onClick={() => setShowCart(false)} aria-label="Close" className="icon-btn" style={{ width: 36, height: 36 }}>
+              <button onClick={() => setShowCart(false)} aria-label="Close" className="icon-btn">
                 <X size={13} aria-hidden="true" />
               </button>
             </div>
@@ -358,7 +402,7 @@ export default function NewOrderPage() {
               <div style={{ display: 'flex', alignItems: 'center', minHeight: 'var(--touch)', marginBottom: 18 }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>Paid now</p>
-                  <p style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>
+                  <p style={{ fontSize: 12, color: 'var(--t2)', marginTop: 1 }}>
                     {paid ? 'Counts as a sale today' : 'Mark it paid later, on Orders'}
                   </p>
                 </div>
@@ -387,9 +431,9 @@ export default function NewOrderPage() {
               ))}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '16px 0 14px' }}>
-                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t3)', letterSpacing: '0.08em' }}>TOTAL</span>
+                <span className="label">Total</span>
                 <span className="data" style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
-                  &#8369;{total.toLocaleString()}
+                  {peso(total)}
                 </span>
               </div>
 
