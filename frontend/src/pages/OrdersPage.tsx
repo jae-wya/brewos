@@ -41,6 +41,9 @@ function Row({ order, idx }: { order: Order, idx: number }) {
             {order.customer_name.toUpperCase()}
           </p>
         )}
+        {order.notes && (
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginBottom: 6 }}>{order.notes}</p>
+        )}
         <div style={{ marginBottom: 10 }}>
           {order.order_items.map(item => (
             <OrderLine key={item.id}

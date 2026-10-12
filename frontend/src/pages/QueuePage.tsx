@@ -70,6 +70,9 @@ function KDSCard({ order, next, action, dotClass }: {
                 {order.customer_name.toUpperCase()}
               </p>
             )}
+            {order.notes && (
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginBottom: 6 }}>{order.notes}</p>
+            )}
             {order.order_items.map(item => (
               <OrderLine key={item.id} variant="queue"
                 quantity={item.quantity} name={item.item_name} category={item.item_category}
