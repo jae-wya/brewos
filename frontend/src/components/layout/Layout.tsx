@@ -32,10 +32,14 @@ export default function Layout() {
         borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, zIndex: 100,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Brand. It gets whatever the buttons leave: at 360px (common on
+            Android) that's tight, so the subtitle never wraps — it would
+            rather end in "…" — and the gaps below are sized so it doesn't
+            have to down to 360. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           {/* Logo mark — gradient square */}
           <div style={{
-            width: 32, height: 32,
+            width: 32, height: 32, flexShrink: 0,
             background: 'linear-gradient(135deg, var(--accent-a), var(--accent-b))',
             borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -43,17 +47,17 @@ export default function Layout() {
           }}>
             <Coffee size={16} color="#14100C" strokeWidth={2.5} aria-hidden="true" />
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div className="display" style={{ fontSize: 20, color: 'var(--t1)', lineHeight: 1 }}>
               BrewOS
             </div>
-            <div style={{ fontSize: 8, color: 'var(--t3)', lineHeight: 1, marginTop: 2, fontFamily: 'JetBrains Mono', letterSpacing: '0.1em' }}>
+            <div style={{ fontSize: 8, color: 'var(--t3)', lineHeight: 1, marginTop: 2, fontFamily: 'JetBrains Mono', letterSpacing: '0.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               GLIMPSE OF DEL
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
             className="icon-btn" style={{ width: 36, height: 36 }}>
             {theme === 'dark' ? <Sun size={13} aria-hidden="true" /> : <Moon size={13} aria-hidden="true" />}
@@ -64,7 +68,7 @@ export default function Layout() {
           <button onClick={logOut} aria-label="Log out" className="icon-btn" style={{ width: 36, height: 36 }}>
             <LogOut size={13} aria-hidden="true" />
           </button>
-          <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '8px 16px', fontSize: 12 }}>
+          <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '8px 12px', fontSize: 12 }}>
             <Plus size={12} strokeWidth={3} aria-hidden="true" />
             New order
           </NavLink>
