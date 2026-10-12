@@ -1,11 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 
+// With reduced motion on, numbers appear at their value instead of counting
+// up. CSS can't stop this one: it's driven from JavaScript, frame by frame.
+const prefersReducedMotion = () => {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { return false }
+}
+
 export function useCountUp(target: number, duration = 800) {
-  const [value, setValue] = useState(0)
-  const prev = useRef(0)
+  const [value, setValue] = useState(() => (prefersReducedMotion() ? target : 0))
+  const prev = useRef(prefersReducedMotion() ? target : 0)
 
   useEffect(() => {
     if (target === prev.current) return
+    if (prefersReducedMotion()) {
+      prev.current = target
+      setValue(target)
+      return
+    }
     const start = prev.current
     const diff = target - start
     const startTime = performance.now()
