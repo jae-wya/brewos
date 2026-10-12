@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { menuApi, errorMessage } from '../lib/api'
 import { keys } from '../lib/queryKeys'
-import { setAvailability, pendingAvailability } from '../lib/availabilityWrites'
+import { setAvailability, shownAvailability } from '../lib/availabilityWrites'
 import { MenuData } from '../types'
 
 type Kind = 'item' | 'option'
@@ -21,14 +21,6 @@ function withAvailability(data: MenuData, kind: Kind, id: string, value: boolean
       modifier_options: m.modifier_options.map(o => o.id === id ? { ...o, is_available: value } : o),
     })),
   }
-}
-
-// Whether an item or add-on is on, as she last set it: her pending tap if a
-// save is still under way, else the cached value. Both screens read this, so
-// a menu reload that lands mid-save can't flash the server's old value — on
-// the order screen, that would offer something she just turned off.
-export function shownAvailability(kind: Kind, id: string, cached: boolean): boolean {
-  return pendingAvailability(`${kind}:${id}`) ?? cached
 }
 
 // On/off switch on the Menu page. Timing, ordering and rollback live in

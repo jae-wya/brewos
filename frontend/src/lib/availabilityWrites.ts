@@ -38,6 +38,14 @@ export function pendingAvailability(key: string): boolean | undefined {
   return pending.get(key)?.wanted
 }
 
+// Whether an item or add-on is on, as she last set it: her pending tap if a
+// save is still under way, else the cached value. Both screens read this, so
+// a menu reload that lands mid-save can't flash the server's old value — on
+// the order screen, that would offer something she just turned off.
+export function shownAvailability(kind: 'item' | 'option', id: string, cached: boolean): boolean {
+  return pendingAvailability(`${kind}:${id}`) ?? cached
+}
+
 // `shown` is what the switch shows before this tap.
 export function setAvailability(key: string, shown: boolean, next: boolean, handlers: Handlers) {
   let p = pending.get(key)
