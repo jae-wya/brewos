@@ -11,6 +11,8 @@ import { fillTemplate, peso } from '../lib/composer'
 import { ChevronLeft, X, Check, Minus, Plus, Trash2, Copy } from 'lucide-react'
 import CategoryBar from '../components/CategoryBar'
 
+const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
 const PAY_METHODS: [string, string][] = [['cash', 'Cash'], ['gcash', 'GCash'], ['maya', 'Maya'], ['card', 'Card']]
 
 function ItemModal({ item, menuData, onAdd, onClose }: {
@@ -182,6 +184,7 @@ export default function NewOrderPage() {
   // Messenger only: when they'll pick it up, in her words ("3pm", "in an
   // hour or two"). Saved as the order's notes, shown on the queue.
   const [pickup, setPickup] = useState('')
+  const [sent, setSent] = useState(false)
   const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
   const { data: settings } = useQuery({ queryKey: keys.settings, queryFn: settingsApi.get, staleTime: 5 * 60_000 })
   const [successOrder, setSuccessOrder] = useState<string | null>(null)
@@ -199,9 +202,15 @@ export default function NewOrderPage() {
       }))
     }),
     onSuccess: (data) => {
-      refreshOrders(qc)
-      setShowCart(false)
-      setSuccessOrder(data.order_number)
+      // The chit she just wrote lifts off toward the queue first (skipped,
+      // with no wait, under reduced motion).
+      setSent(true)
+      setTimeout(() => {
+        setSent(false)
+        refreshOrders(qc)
+        setShowCart(false)
+        setSuccessOrder(data.order_number)
+      }, REDUCED_MOTION ? 0 : 340)
     }
   })
 
@@ -280,7 +289,7 @@ export default function NewOrderPage() {
               className="panel menu-card"
               aria-label={`${item.name}`}
               style={{ padding: '14px', textAlign: 'left', animation: `childEnter 0.3s ${idx * 30}ms both` }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', lineHeight: 1.3, marginBottom: 8 }}>{item.name}</p>
+              <p className="display" style={{ fontSize: 22, color: 'var(--t1)', lineHeight: 1, letterSpacing: '0.02em', marginBottom: 8 }}>{item.name}</p>
               <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>&#8369;{item.base_price}</p>
               {item.menu_item_modifiers.length > 0 && (
                 <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginTop: 6 }}>Has options</p>
@@ -340,6 +349,35 @@ export default function NewOrderPage() {
             </div>
 
             <div style={{ padding: '14px 16px' }}>
+              {/* The chit she's writing: the same paper slip that will hang on
+                  the queue's rail. */}
+              <div className="chit" style={{ padding: '14px 14px 12px', marginBottom: 20, animation: sent ? 'chitSend 0.34s ease-in forwards' : undefined }}>
+                <p className="display" style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1 }}>
+                  New · {src === 'messenger' ? 'Messenger' : 'Walk-in'}{name.trim() ? ` · ${name.trim()}` : ''}
+                </p>
+                {cart.map((item, i) => (
+                  <OrderLine key={i} variant="chit"
+                    quantity={item.quantity} name={item.item_name} category={null}
+                    modifiers={[...(item.item_category ? [item.item_category] : []), ...item.modifiers.map(m => m.option_name)]} notes={item.notes || null}
+                    trailing={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, alignSelf: 'center' }}>
+                      <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>
+                        {peso(item.estimated_unit_price * item.quantity)}
+                      </span>
+                      <button onClick={() => { place.reset(); setCart(p => p.filter((_, j) => j !== i)) }}
+                        aria-label={`Remove ${item.item_category ?? ''} ${item.item_name}`.trim()}
+                        style={{ width: 'var(--touch)', height: 'var(--touch)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', cursor: 'pointer', background: 'none', border: 'none', marginRight: -10 }}>
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
+                    </div>
+                  } />
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 12, borderTop: '1px dashed rgba(26,18,8,0.3)', marginTop: 4 }}>
+                  <span className="data" style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-2)', letterSpacing: '0.08em' }}>TOTAL</span>
+                  <span className="display" style={{ fontSize: 40, color: 'var(--ink)', lineHeight: 0.9 }}>{peso(total)}</span>
+                </div>
+              </div>
+
               <p className="label" style={{ marginBottom: 10 }}>Payment</p>
               <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
                 {PAY_METHODS.map(([pm, label]) => (
@@ -362,31 +400,6 @@ export default function NewOrderPage() {
                   aria-label="Paid now" className={`tog ${paid ? 'tog-on' : 'tog-off'}`} style={{ marginLeft: 16 }}>
                   <span className="tog-knob" />
                 </button>
-              </div>
-
-              {cart.map((item, i) => (
-                <OrderLine key={i}
-                  quantity={item.quantity} name={item.item_name} category={item.item_category}
-                  modifiers={item.modifiers.map(m => m.option_name)} notes={item.notes || null}
-                  trailing={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 12 }}>
-                    <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
-                      &#8369;{(item.estimated_unit_price * item.quantity).toLocaleString()}
-                    </span>
-                    <button onClick={() => { place.reset(); setCart(p => p.filter((_, j) => j !== i)) }}
-                      aria-label={`Remove ${item.item_category ?? ''} ${item.item_name}`.trim()}
-                      style={{ width: 'var(--touch)', height: 'var(--touch)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', cursor: 'pointer', background: 'none', border: 'none' }}>
-                      <Trash2 size={14} aria-hidden="true" />
-                    </button>
-                  </div>
-                } />
-              ))}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '16px 0 14px' }}>
-                <span className="label">Total</span>
-                <span className="data" style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
-                  {peso(total)}
-                </span>
               </div>
 
               {src === 'messenger' && (

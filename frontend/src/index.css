@@ -549,6 +549,10 @@ body::before {
 @keyframes chitLeave {
   to { transform: translateX(110%) rotate(2deg); opacity: 0; }
 }
+/* Placing an order: the chit she wrote lifts off toward the queue. */
+@keyframes chitSend {
+  to { transform: translateY(-48px) scale(0.94); opacity: 0; }
+}
 @keyframes countBump {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.3); }
