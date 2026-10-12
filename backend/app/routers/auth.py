@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 from app.config import get_settings
@@ -8,18 +7,12 @@ from app.database import get_supabase, get_supabase_admin
 
 router = APIRouter()
 settings = get_settings()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # --- Models ---
 class OwnerLoginRequest(BaseModel):
     email: str
     password: str
-
-class StaffPINRequest(BaseModel):
-    business_id: str
-    staff_id: str
-    pin: str
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -81,50 +74,7 @@ async def owner_login(body: OwnerLoginRequest):
     )
 
 
-@router.get("/staff/{business_id}")
-async def list_staff(business_id: str):
-    """Returns active staff for PIN selection screen."""
-    supabase = get_supabase_admin()
-    res = supabase.table("staff")\
-        .select("id, display_name, role")\
-        .eq("business_id", business_id)\
-        .eq("is_active", True)\
-        .is_("deleted_at", None)\
-        .neq("role", "owner")\
-        .execute()
-    return res.data
-
-
-@router.post("/staff-login", response_model=TokenResponse)
-async def staff_login(body: StaffPINRequest):
-    supabase = get_supabase_admin()
-    staff = supabase.table("staff")\
-        .select("*")\
-        .eq("id", body.staff_id)\
-        .eq("business_id", body.business_id)\
-        .eq("is_active", True)\
-        .single()\
-        .execute()
-
-    if not staff.data:
-        raise HTTPException(status_code=404, detail="Staff not found")
-
-    if not staff.data.get("pin_hash"):
-        raise HTTPException(status_code=400, detail="No PIN set for this staff")
-
-    if not pwd_context.verify(body.pin, staff.data["pin_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid PIN")
-
-    token = create_token({
-        "sub": staff.data["id"],
-        "staff_id": staff.data["id"],
-        "business_id": staff.data["business_id"],
-        "role": staff.data["role"],
-    })
-
-    return TokenResponse(
-        access_token=token,
-        role=staff.data["role"],
-        display_name=staff.data["display_name"],
-        business_id=staff.data["business_id"]
-    )
+# Staff PIN login was removed before handover: it was unauthenticated, took
+# business_id from the client, had no limit on PIN attempts, and nothing
+# called it. Staff accounts are a later phase; build it again then, with the
+# business resolved server-side and attempts rate-limited.
