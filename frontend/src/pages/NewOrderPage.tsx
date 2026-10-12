@@ -168,12 +168,19 @@ export default function NewOrderPage() {
   const [pay, setPay] = useState('cash')
   const [showCart, setShowCart] = useState(false)
   const [src, setSrc] = useState<'walk_in' | 'messenger'>('walk_in')
+  // "Paid now": on for Messenger (paid by GCash proof before she makes it),
+  // off for walk-in, where counting it paid before the money arrives would
+  // be an accounting error and drop it off her unpaid list. Switching the
+  // source goes back to that source's default.
+  const [paidChoice, setPaidChoice] = useState<boolean | null>(null)
+  const paid = paidChoice ?? src === 'messenger'
+  const pickSource = (s: 'walk_in' | 'messenger') => { setSrc(s); setPaidChoice(null) }
   const [successOrder, setSuccessOrder] = useState<string | null>(null)
 
   const place = useMutation({
     mutationFn: () => ordersApi.createOrder({
       source: src,
-      customer_name: name || null, payment_method: pay,
+      customer_name: name || null, payment_method: pay, paid,
       // Only IDs and quantities — the backend looks up prices and names
       items: cart.map(i => ({
         menu_item_id: i.menu_item_id, quantity: i.quantity,
@@ -225,8 +232,8 @@ export default function NewOrderPage() {
 
       {/* Source + name */}
       <div style={{ background: 'var(--s1)', borderBottom: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        <button onClick={() => setSrc('walk_in')} aria-pressed={src === 'walk_in'} className={`chip ${src === 'walk_in' ? 'chip-on' : ''}`}>Walk-in</button>
-        <button onClick={() => setSrc('messenger')} aria-pressed={src === 'messenger'} className={`chip ${src === 'messenger' ? 'chip-on' : ''}`}>Messenger</button>
+        <button onClick={() => pickSource('walk_in')} aria-pressed={src === 'walk_in'} className={`chip ${src === 'walk_in' ? 'chip-on' : ''}`}>Walk-in</button>
+        <button onClick={() => pickSource('messenger')} aria-pressed={src === 'messenger'} className={`chip ${src === 'messenger' ? 'chip-on' : ''}`}>Messenger</button>
         <label htmlFor="cname" style={{ display: 'none' }}>Customer name</label>
         <input id="cname" type="text" value={name} onChange={e => setName(e.target.value)}
           placeholder="Customer name" className="field"
@@ -314,6 +321,19 @@ export default function NewOrderPage() {
                     {pm}
                   </button>
                 ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', minHeight: 'var(--touch)', marginBottom: 18 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>Paid now</p>
+                  <p style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>
+                    {paid ? 'Counts as a sale today' : 'Mark it paid later, on Orders'}
+                  </p>
+                </div>
+                <button onClick={() => setPaidChoice(!paid)} role="switch" aria-checked={paid}
+                  aria-label="Paid now" className={`tog ${paid ? 'tog-on' : 'tog-off'}`} style={{ marginLeft: 16 }}>
+                  <span className="tog-knob" />
+                </button>
               </div>
 
               {cart.map((item, i) => (

@@ -34,6 +34,9 @@ class CreateOrderRequest(BaseModel):
     customer_contact: Optional[str] = None
     notes: Optional[str] = None
     payment_method: Optional[str] = "cash"
+    # "Paid now" in the cart: a Messenger order is paid (GCash proof) before
+    # it's made. paid_at is set by the database (migration 004), not here.
+    paid: bool = False
     items: List[OrderItemRequest]
 
 class UpdateOrderStatusRequest(BaseModel):
@@ -164,7 +167,7 @@ async def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(req
         "subtotal": subtotal,
         "total_amount": subtotal,
         "payment_method": body.payment_method,
-        "payment_status": "unpaid",
+        "payment_status": "paid" if body.paid else "unpaid",
         "status": "pending"
     }).execute()
 
