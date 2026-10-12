@@ -69,13 +69,23 @@ async def toggle_item(item_id: str, body: Optional[AvailabilityRequest] = None,
     """Set (or, with no body, flip) item availability."""
     supabase = get_supabase_admin()
 
-    item = supabase.table("menu_items")        .select("is_available")        .eq("id", item_id)        .eq("business_id", user.business_id)        .is_("deleted_at", None)        .limit(1)        .execute()
+    item = supabase.table("menu_items")\
+        .select("is_available")\
+        .eq("id", item_id)\
+        .eq("business_id", user.business_id)\
+        .is_("deleted_at", None)\
+        .limit(1)\
+        .execute()
 
     if not item.data:
         raise HTTPException(status_code=404, detail="That item no longer exists. Pull down to refresh.")
 
     new_value = _target(body, item.data[0]["is_available"])
-    supabase.table("menu_items")        .update({"is_available": new_value})        .eq("id", item_id)        .eq("business_id", user.business_id)        .execute()
+    supabase.table("menu_items")\
+        .update({"is_available": new_value})\
+        .eq("id", item_id)\
+        .eq("business_id", user.business_id)\
+        .execute()
 
     return {"id": item_id, "is_available": new_value}
 
@@ -86,12 +96,21 @@ async def toggle_modifier_option(option_id: str, body: Optional[AvailabilityRequ
     """Set (or, with no body, flip) modifier option availability (e.g. Espresso Shot, Nacho Sauce)."""
     supabase = get_supabase_admin()
 
-    result = supabase.table("modifier_options")        .select("is_available")        .eq("id", option_id)        .eq("business_id", user.business_id)        .limit(1)        .execute()
+    result = supabase.table("modifier_options")\
+        .select("is_available")\
+        .eq("id", option_id)\
+        .eq("business_id", user.business_id)\
+        .limit(1)\
+        .execute()
 
     if not result.data:
         raise HTTPException(status_code=404, detail="That add-on no longer exists. Pull down to refresh.")
 
     new_value = _target(body, result.data[0]["is_available"])
-    supabase.table("modifier_options")        .update({"is_available": new_value})        .eq("id", option_id)        .eq("business_id", user.business_id)        .execute()
+    supabase.table("modifier_options")\
+        .update({"is_available": new_value})\
+        .eq("id", option_id)\
+        .eq("business_id", user.business_id)\
+        .execute()
 
     return {"id": option_id, "is_available": new_value}
