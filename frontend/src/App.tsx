@@ -7,9 +7,11 @@ import OrdersPage from './pages/OrdersPage'
 import NewOrderPage from './pages/NewOrderPage'
 import MenuPage from './pages/MenuPage'
 import DashboardPage from './pages/DashboardPage'
+import InstallPrompt from './components/InstallPrompt'
 
 export default function App() {
   return (
+    <>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
@@ -21,5 +23,8 @@ export default function App() {
         <Route path="menu" element={<MenuPage />} />
       </Route>
     </Routes>
+    {/* Once, outside the routes: install bar and "Update ready" on every page */}
+    <InstallPrompt />
+    </>
   )
 }
