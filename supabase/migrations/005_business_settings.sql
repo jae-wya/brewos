@@ -1,8 +1,11 @@
 -- ============================================================
 -- 005 — per-business settings (Messenger payment request)
--- NOT YET APPLIED. Apply to the Glimpse of Del Supabase project BEFORE
--- deploying the backend with GET/PATCH /settings, which reads and writes
--- businesses.settings.
+-- Applied to the Glimpse of Del Supabase project on 2026-10-12. The first
+-- run stopped at STEP 2 (orders_payment_method_check allowed cash, gcash,
+-- card, pending); the constraint was widened by hand, then 005 ran. STEP 2
+-- below now does that widening itself, so a fresh database gets the same
+-- result in one run. Verified: businesses.settings is jsonb.
+-- Apply BEFORE deploying the backend with GET/PATCH /settings.
 -- ============================================================
 --
 -- The order screen's "Copy message" fills a payment request from the cart:
@@ -27,10 +30,9 @@
 -- object to read, never NULL.
 --
 -- Also: Maya joins Cash, GCash and Card as a payment method. The original
--- schema predates this folder, so whether orders.payment_method has a CHECK
--- constraint isn't recorded anywhere. STEP 2 looks: if there is one, it
--- stops the migration and prints the constraint, so it can be widened by
--- hand with the full list of values rather than guessed at here.
+-- schema (which predates this folder) has orders_payment_method_check
+-- allowing cash, gcash, card and pending. STEP 2 replaces it with the same
+-- list plus maya.
 -- ============================================================
 
 BEGIN;
@@ -45,8 +47,20 @@ COMMENT ON COLUMN businesses.settings IS
   'Per-business preferences: messenger_template, gcash_number, maya_number. Absent key = backend default.';
 
 -- ------------------------------------------------------------
--- STEP 2 — make sure payment_method accepts 'maya'
+-- STEP 2 — payment_method accepts 'maya'
 -- ------------------------------------------------------------
+-- Every value the original constraint allowed, plus maya. 'pending' is never
+-- sent by the current app but was allowed, so it stays allowed. ADD
+-- CONSTRAINT validates existing rows: if a database holds a value not in
+-- this list, it fails here and nothing in 005 is applied, rather than the
+-- value being silently disallowed.
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_payment_method_check;
+ALTER TABLE orders ADD CONSTRAINT orders_payment_method_check
+  CHECK (payment_method = ANY (ARRAY['cash'::text, 'gcash'::text, 'maya'::text, 'card'::text, 'pending'::text]));
+
+-- Guard: any OTHER check constraint on payment_method (a differently named
+-- one in some other database) that still lacks maya would reject Maya
+-- orders. Stop and print it rather than guess at its values.
 DO $$
 DECLARE
   r RECORD;
@@ -78,12 +92,19 @@ COMMIT;
 --   SELECT id, settings FROM businesses;
 --   -- Expect: {} for every business.
 --
--- If STEP 2 raised: nothing was applied (one transaction). Widen the
--- constraint, e.g.
---   ALTER TABLE orders DROP CONSTRAINT <name>;
---   ALTER TABLE orders ADD CONSTRAINT <name>
---     CHECK (payment_method IN (<every existing value>, 'maya'));
--- and run 005 again.
+--   SELECT pg_get_constraintdef(oid) FROM pg_constraint
+--   WHERE conname = 'orders_payment_method_check';
+--   -- Expect: CHECK ((payment_method = ANY (ARRAY['cash'::text,
+--   --   'gcash'::text, 'maya'::text, 'card'::text, 'pending'::text])))
+--
+-- If STEP 2 failed: nothing was applied (one transaction).
+--   * "violates check constraint": some order has a payment_method outside
+--     the list. Find it (SELECT DISTINCT payment_method FROM orders), add
+--     that value to the ARRAY above, run again.
+--   * The guard raised: another constraint names payment_method; widen it
+--     by hand keeping every value it allows, plus 'maya', and run again.
+--
+-- Re-running 005 is safe: every step is IF NOT EXISTS / IF EXISTS.
 --
 -- PostgREST caches the schema. If the API still rejects settings right
 -- after this runs, reload it:
