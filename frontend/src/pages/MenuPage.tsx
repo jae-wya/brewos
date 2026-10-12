@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { menuApi, errorMessage } from '../lib/api'
@@ -325,8 +326,17 @@ export default function MenuPage() {
         )
       })}
 
-      {/* Undo bar: sticks to the bottom of the screen, above the nav */}
-      <div role="status" aria-live="polite" style={{ position: 'sticky', bottom: 12, padding: '0 12px', zIndex: 50 }}>
+      {/* Undo bar, fixed just above the bottom nav (about 57px tall). Not
+          sticky: sticky attaches to <main> (overflow: auto), which never
+          scrolls itself — the page does — so a sticky bar sat at the end of
+          the menu, off-screen. Portalled to <body> because .page-enter's
+          transform would turn fixed into "fixed to this page". Above the nav
+          (100), below the item sheet (110). */}
+      {createPortal(
+      <div role="status" aria-live="polite" style={{
+        position: 'fixed', left: 0, right: 0, bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
+        maxWidth: 480, margin: '0 auto', padding: '0 12px', zIndex: 105,
+      }}>
         {bar && (
           <div className="panel" style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '6px 6px 6px 16px',
@@ -338,7 +348,9 @@ export default function MenuPage() {
             )}
           </div>
         )}
-      </div>
+      </div>,
+      document.body,
+      )}
 
       {sheet && menuData && (
         <ItemSheet
