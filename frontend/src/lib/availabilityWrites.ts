@@ -33,6 +33,12 @@ interface Pending {
 // Lives outside React so a write still finishes if she leaves the page.
 const pending = new Map<string, Pending>()
 
+// What the switch should show while a write is pending, so a menu reload
+// that lands mid-write can't flash the server's old value over her tap.
+export function pendingAvailability(key: string): boolean | undefined {
+  return pending.get(key)?.wanted
+}
+
 // `shown` is what the switch shows before this tap.
 export function setAvailability(key: string, shown: boolean, next: boolean, handlers: Handlers) {
   let p = pending.get(key)

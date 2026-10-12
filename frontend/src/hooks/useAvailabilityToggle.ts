@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { menuApi, errorMessage } from '../lib/api'
 import { keys } from '../lib/queryKeys'
-import { setAvailability } from '../lib/availabilityWrites'
+import { setAvailability, pendingAvailability } from '../lib/availabilityWrites'
 import { MenuData } from '../types'
 
 type Kind = 'item' | 'option'
@@ -34,9 +34,11 @@ export function useAvailabilityToggle(kind: Kind, id: string, name: string) {
   const qc = useQueryClient()
   const [error, setError] = useState<string | null>(null)
 
+  const key = `${kind}:${id}`
+
   const set = (shown: boolean, next: boolean) => {
     setError(null)
-    setAvailability(`${kind}:${id}`, shown, next, {
+    setAvailability(key, shown, next, {
       send: v => (kind === 'item' ? menuApi.setItemAvailable(id, v) : menuApi.setOptionAvailable(id, v))
         .then(res => res.is_available),
       show: v => {
@@ -48,5 +50,8 @@ export function useAvailabilityToggle(kind: Kind, id: string, name: string) {
     })
   }
 
-  return { set, error }
+  // The value to show: her pending tap if there is one, else the cached value.
+  const on = (cached: boolean) => pendingAvailability(key) ?? cached
+
+  return { set, on, error }
 }

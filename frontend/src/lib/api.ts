@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { getSession, clearSession } from './session'
+import { MenuItem } from '../types'
 
 // Still used by the orders and queue routes, which haven't moved to the
 // token yet. Menu routes get business_id from the token on the server.
@@ -78,6 +79,22 @@ export const menuApi = {
   setOptionAvailable: (optionId: string, isAvailable: boolean) =>
     api.patch(`/menu/modifier-options/${optionId}/toggle`, { is_available: isAvailable })
       .then(r => r.data as { id: string, is_available: boolean }),
+  // Prices go as the typed string; the server validates and rounds nothing.
+  createItem: (body: ItemFields) =>
+    api.post('/menu/items', body).then(r => r.data as MenuItem),
+  updateItem: (itemId: string, body: Partial<ItemFields>) =>
+    api.patch(`/menu/items/${itemId}`, body).then(r => r.data as MenuItem),
+  deleteItem: (itemId: string) =>
+    api.delete(`/menu/items/${itemId}`).then(r => r.data),
+  restoreItem: (itemId: string) =>
+    api.post(`/menu/items/${itemId}/restore`).then(r => r.data as MenuItem),
+}
+
+export interface ItemFields {
+  name: string
+  base_price: string
+  category_id: string
+  modifier_ids: string[]
 }
 
 export const ordersApi = {
