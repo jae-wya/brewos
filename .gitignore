@@ -21,3 +21,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# TypeScript build output (tsc -b)
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
