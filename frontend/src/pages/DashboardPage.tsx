@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { queueApi } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
-import { useCountUp } from '../hooks/useCountUp'
 import { keys } from '../lib/queryKeys'
 import { peso } from '../lib/composer'
 
@@ -40,8 +39,10 @@ export default function DashboardPage() {
     refetchInterval: 30_000,
     retry: 2,
   })
-  const orders = useCountUp(stats?.total_orders ?? 0, 900)
-  const onRail = useCountUp(stats?.active_orders ?? 0, 900)
+  // Shown at their value, no count-up: she opens this dozens of times a day,
+  // and a count-up flashed "₱0 taken" every time.
+  const orders = stats?.total_orders ?? 0
+  const onRail = stats?.active_orders ?? 0
 
   // The café's timezone (from the backend), so the day named on the sign is
   // the day the stats were counted for. The phone's zone until loaded.

@@ -573,8 +573,7 @@ body::before {
    Shortening durations alone isn't enough: an `infinite` animation then
    repeats every 0.01ms and flickers (the queue's heat border, the skeleton
    shimmer, pulse dots). Run every animation once, ending on its last frame,
-   so motion stops instead. Inline animations are covered too (!important).
-   JS-driven motion (useCountUp) checks the same setting itself. */
+   so motion stops instead. Inline animations are covered too (!important). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
