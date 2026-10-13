@@ -142,7 +142,7 @@ function SuccessOverlay({ orderNumber, onDone }: { orderNumber: string, onDone: 
     <div className="success-overlay" role="alertdialog" aria-label="Order placed">
       <div style={{
         width: 80, height: 80, borderRadius: '50%',
-        background: 'rgba(0,232,135,0.12)', border: '2px solid var(--ready)',
+        background: 'color-mix(in srgb, var(--ready) 12%, transparent)', border: '2px solid var(--ready)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         animation: 'checkPop 0.5s cubic-bezier(.34,1.56,.64,1) both',
       }}>

@@ -26,10 +26,11 @@
   --t2:        #A89880;
   --t3:        #7A6858;
 
-  /* Status neons */
+  /* Status: the stall's own colours, no glow. Pending is the bulb's amber
+     (needs her), brewing the crema (in hand), ready sage (done, waiting). */
   --pending:   #FFB347;
-  --brewing:   #00D4FF;
-  --ready:     #00E887;
+  --brewing:   #E2C9A6;
+  --ready:     #B5C87A;
   --danger:    #FF4B4B;
 
   /* Shape */
@@ -82,8 +83,8 @@
      on every light surface (were 2.7-4.3). Pending matches accent, as in
      the dark theme. */
   --pending:   #975307;
-  --brewing:   #006A88;
-  --ready:     #00703F;
+  --brewing:   #6E4E2C; /* 5.8:1 worst */
+  --ready:     #4D6519; /* 5.0:1 worst */
   --danger:    #B81C1C;
   /* The stall by day: no bulb, a warm daylight wash from above. */
   --lamp:      rgba(255,206,140,0.30);
@@ -290,9 +291,9 @@ body::before {
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .dot-pending { background: var(--pending); box-shadow: 0 0 6px var(--pending); }
-  .dot-brewing { background: var(--brewing); box-shadow: 0 0 6px var(--brewing); }
-  .dot-ready   { background: var(--ready);   box-shadow: 0 0 6px var(--ready);   }
+  .dot-pending { background: var(--pending); }
+  .dot-brewing { background: var(--brewing); }
+  .dot-ready   { background: var(--ready);   }
 
   /* Badge */
   .badge {
@@ -308,8 +309,8 @@ body::before {
     font-family: 'Figtree', sans-serif;
   }
   .badge-pending  { background: rgba(255,179,71,0.12);  color: var(--pending); }
-  .badge-brewing  { background: rgba(0,212,255,0.12);   color: var(--brewing); }
-  .badge-ready    { background: rgba(0,232,135,0.12);   color: var(--ready);   }
+  .badge-brewing  { background: color-mix(in srgb, var(--brewing) 12%, transparent); color: var(--brewing); }
+  .badge-ready    { background: color-mix(in srgb, var(--ready) 12%, transparent);   color: var(--ready);   }
   .badge-done     { background: var(--s3);              color: var(--t2); }
   .badge-cancelled{ background: rgba(255,75,75,0.12);   color: var(--danger); }
 

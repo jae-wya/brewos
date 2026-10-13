@@ -29,7 +29,7 @@ function Row({ order, idx }: { order: Order, idx: number }) {
         <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{order.order_number}</span>
         <span className={`badge ${S_BADGE[order.status]}`}>{S_LABEL[order.status]}</span>
         {order.source === 'messenger' && (
-          <span className="badge" style={{ background: 'rgba(0,212,255,0.08)', color: 'var(--brewing)' }}>DM</span>
+          <span className="badge" style={{ background: 'color-mix(in srgb, var(--brewing) 8%, transparent)', color: 'var(--brewing)' }}>DM</span>
         )}
         <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>
           {new Date(order.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
