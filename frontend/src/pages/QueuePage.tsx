@@ -68,8 +68,10 @@ function Chit({ order, next, action }: { order: Order, next: string, action: str
         <button
           onClick={() => advance.mutate()}
           disabled={advance.isPending}
-          className="btn btn-fire"
-          style={{ width: '100%', marginTop: 12, minHeight: 48, fontSize: 14 }}
+          // Ink on the paper, not the tungsten gradient: with a rail of
+          // chits the gradient was seven loud buttons, drowning out the heat.
+          className="btn"
+          style={{ width: '100%', marginTop: 12, minHeight: 48, fontSize: 14, background: 'var(--ink)', color: 'var(--chit)', borderRadius: 'var(--r)' }}
           aria-label={`${action} for ${order.order_number}`}
         >
           {advance.isPending ? '···' : action}
