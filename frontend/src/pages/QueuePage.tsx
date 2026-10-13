@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { queueApi, ordersApi } from '../lib/api'
+import { queueApi, ordersApi, errorMessage } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
@@ -28,7 +28,9 @@ function Chit({ order, next, action }: { order: Order, next: string, action: str
     mutationFn: () => ordersApi.updateStatus(order.id, next),
     onMutate: () => setLeaving(true),
     onSuccess: () => { setTimeout(() => refreshOrders(qc), 260) },
-    onError: () => setLeaving(false), // slides back onto the rail
+    // Slides back onto the rail, and says why: watching it slide back isn't
+    // enough to know the drink is still pending on the server.
+    onError: () => setLeaving(false),
   })
 
   return (
@@ -58,6 +60,11 @@ function Chit({ order, next, action }: { order: Order, next: string, action: str
             quantity={item.quantity} name={item.item_name} category={item.item_category}
             modifiers={item.order_item_modifiers.map(m => m.option_name)} notes={item.notes} />
         ))}
+        {advance.isError && (
+          <p role="alert" style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-danger)', marginTop: 12 }}>
+            Not moved — still {order.status}. {errorMessage(advance.error)}
+          </p>
+        )}
         <button
           onClick={() => advance.mutate()}
           disabled={advance.isPending}

@@ -49,6 +49,8 @@
   --chit:      #F2E8D5;
   --ink:       #1A1208;
   --ink-2:     #5A4734;
+  /* An error written on the chit: red ink, 6.2:1 on the paper (7.5 on white). */
+  --ink-danger: #A61B1B;
   /* Heat on a chit running late; never behind text. */
   --ember:     #FF6B35;
 
@@ -90,6 +92,7 @@
   --chit:      #FFFFFF;
   --ink:       #1A1208;
   --ink-2:     #5A4734;
+  --ink-danger: #A61B1B;
   --ember:     #DC5F2C; /* ink on it 5.0:1 (the late stamp); outline on white 3.7:1 */
 }
 
