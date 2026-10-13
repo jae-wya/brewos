@@ -5,7 +5,6 @@ import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
 import { NavLink } from 'react-router-dom'
-import { Plus } from 'lucide-react'
 
 const S_BADGE: Record<string, string> = {
   pending: 'badge-pending', brewing: 'badge-brewing', ready: 'badge-ready',
@@ -84,12 +83,8 @@ export default function OrdersPage() {
 
   return (
     <div className="page-enter" style={{ padding: '16px', maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95 }}>ORDERS</h1>
-        <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '9px 18px', fontSize: 12 }}>
-          <Plus size={12} strokeWidth={3} aria-hidden="true" /> New
-        </NavLink>
-      </div>
+      {/* No New button here: the header's New order covers this page. */}
+      <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95, marginBottom: 20 }}>ORDERS</h1>
 
       {waking && (
         <div className="wake-banner" style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)' }}>
