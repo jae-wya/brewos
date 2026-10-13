@@ -291,9 +291,6 @@ export default function NewOrderPage() {
               style={{ padding: '14px', textAlign: 'left', animation: `childEnter 0.3s ${idx * 30}ms both` }}>
               <p className="display" style={{ fontSize: 22, color: 'var(--t1)', lineHeight: 1, letterSpacing: '0.02em', marginBottom: 8 }}>{item.name}</p>
               <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>&#8369;{item.base_price}</p>
-              {item.menu_item_modifiers.length > 0 && (
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginTop: 6 }}>Has options</p>
-              )}
             </button>
           ))}
           {!visible.length && (
