@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ordersApi } from '../lib/api'
+import { ordersApi, errorMessage } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
@@ -65,6 +65,12 @@ function Row({ order, idx }: { order: Order, idx: number }) {
             <span role="status" style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--ready)', letterSpacing: '0.06em' }}>PAID ✓</span>
           ) : null}
         </div>
+        {/* A payment that didn't save must say so: otherwise she believes it's paid. */}
+        {markPaid.isError && (
+          <p role="alert" style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)', marginTop: 8 }}>
+            Not marked paid — still unpaid. {errorMessage(markPaid.error)}
+          </p>
+        )}
       </div>
     </article>
   )
