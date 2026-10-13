@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Coffee, ListOrdered, UtensilsCrossed, Plus, Sun, Moon, Settings } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
 
@@ -11,6 +11,11 @@ const nav = [
 
 export default function Layout() {
   const { theme, toggle } = useTheme()
+  // New order is the one thing to do from Queue, Orders and Menu. Not on the
+  // Dashboard, which has its own "Take an order", nor on New order itself,
+  // where it would be a button to the page she's on.
+  const { pathname } = useLocation()
+  const showNewOrder = pathname !== '/dashboard' && pathname !== '/orders/new'
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}> {/* transparent: the lamp (body::before) shows through */}
@@ -55,10 +60,12 @@ export default function Layout() {
           <NavLink to="/settings" aria-label="Settings" className="icon-btn">
             <Settings size={13} aria-hidden="true" />
           </NavLink>
-          <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '8px 12px', fontSize: 12 }}>
-            <Plus size={12} strokeWidth={3} aria-hidden="true" />
-            New order
-          </NavLink>
+          {showNewOrder && (
+            <NavLink to="/orders/new" className="btn btn-fire" style={{ padding: '8px 12px', fontSize: 12 }}>
+              <Plus size={12} strokeWidth={3} aria-hidden="true" />
+              New order
+            </NavLink>
+          )}
         </div>
       </header>
 
