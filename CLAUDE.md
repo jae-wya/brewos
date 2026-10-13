@@ -1,5 +1,22 @@
 # BrewOS
 
+> **Handover checklist — Phase 1 is built (2026-10-14). Left before handing over:**
+>
+> 1. **Hard-delete the test orders**, not soft-delete. Migration 002 counts
+>    deleted rows toward numbering, so a soft delete would leave her first
+>    real order numbered after the tests; it must be ORD-0001. Deleting from
+>    `orders` cascades to `order_items` and `order_item_modifiers` (001).
+> 2. **Verify menu prices against her printed menu**, especially the six
+>    Hot/Iced pairs.
+> 3. **Create her owner account** with her own email (see Accounts below).
+> 4. **Delete `C:\Users\Jae\brewos-harness.json`**: it holds the support
+>    account's login, used by the headless test harness.
+> 5. **Write the support-account disclosure** for her, in writing: what the
+>    account can see (everything: menu, orders, sales) and the SQL to
+>    disable it (`is_active = false` on its `staff` row; immediate).
+>
+> Remove this note once all five are done.
+
 Café operations system for **Glimpse of Del**, a single-operator coffee shop in
 Los Baños, Laguna. Built by Jae (BSCS, LSPU-LB) as a client project and the
 second portfolio case study after Bloom OS.
