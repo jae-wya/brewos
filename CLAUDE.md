@@ -152,3 +152,17 @@ ordering, multi-branch. Not in scope; don't build toward them speculatively.
 - Small, reviewable changes. This is a solo project maintained by a student
   during term time — clever is worse than obvious.
 - When something is ambiguous, ask rather than guess.
+
+## Known design debt
+
+Light mode's counter tone is lighter than the design calls for. The constraint
+is that labels and headings currently sit directly on the background, so the
+background has to carry 4.5:1 text. In the counter metaphor nothing is written
+on the counter — text belongs on paper or on the board. Once those labels move
+onto surfaces (sessions 2–3), the background can go to a darker counter tone
+(~#8D7F6F), which is the intended look.
+
+Paper sitting only ~2:1 lighter than that counter is deliberate, not part of
+the debt: paper on pale wood in daylight is barely lighter than the wood, and
+a chit is identified by its torn edge and its writing, not its fill. A red
+error she has to notice outranks a 3:1 edge she doesn't.
