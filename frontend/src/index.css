@@ -137,8 +137,9 @@
     background-attachment: fixed;
   }
 
+  /* Focus: the text colour, so it shows on every surface; ink on paper. */
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--t1);
     outline-offset: 3px;
     border-radius: var(--r);
   }
@@ -235,10 +236,11 @@ body::before {
   .btn:active:not(:disabled) { transform: scale(0.96); }
   .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-  /* Gradient primary button */
+  /* Primary button off paper: solid kraft, ink text (7.71:1; 4.85 by
+     day). On a chit the primary is ink on paper instead (QueuePage). */
   .btn-fire {
-    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-    color: #14100C;
+    background: var(--kraft);
+    color: var(--ink);
     /* Lit from above (catch-light on top), casting a shadow down — not an
        outward neon glow. */
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 16px -8px var(--cast);
@@ -281,6 +283,7 @@ body::before {
     box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 12px 22px -14px var(--cast);
   }
   [data-theme="light"] .chit { border: 1px solid var(--border); }
+  .chit :focus-visible { outline-color: var(--ink); }
   .chit::before {
     content: '';
     position: absolute;
@@ -352,8 +355,8 @@ body::before {
   }
   .field::placeholder { color: var(--t3); }
   .field:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-bg);
+    border-color: var(--t1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--t1) 10%, transparent);
   }
 
   /* Chip */
@@ -373,14 +376,13 @@ body::before {
     white-space: nowrap;
     min-height: var(--touch);
   }
-  /* Selected: an accent outline and accent text on a faint tint. The
-     tungsten gradient is reserved for the primary action — a selected chip
-     in gradient read as one more button to press. */
+  /* Selected: a text-colour outline and text on a faint tint. A state, not
+     an action, so not kraft; not lateness, so never ember. */
   .chip-on {
-    background: var(--accent-bg);
-    border-color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent);
-    color: var(--accent);
+    background: color-mix(in srgb, var(--t1) 8%, transparent);
+    border-color: var(--t1);
+    box-shadow: inset 0 0 0 1px var(--t1);
+    color: var(--t1);
     font-weight: 700;
   }
   .chip:not(.chip-on):hover { border-color: var(--border-hi); color: var(--t1); }
@@ -404,7 +406,7 @@ body::before {
     position: absolute;
     inset: -9px -4px;
   }
-  .tog-on  { background: var(--accent); } /* state, not an action: no gradient */
+  .tog-on  { background: var(--kraft); } /* 8.05:1 on the background; 3.48 by day */
   .tog-off { background: var(--s3); border: 1px solid var(--border-hi); }
   .tog-knob {
     position: absolute;

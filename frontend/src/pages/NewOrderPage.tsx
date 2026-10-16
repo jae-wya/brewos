@@ -437,7 +437,7 @@ export default function NewOrderPage() {
                 className="btn btn-fire" style={{ width: '100%', padding: '16px', fontSize: 15 }}>
                 {place.isPending ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(20,16,12,0.3)', borderTopColor: '#14100C', animation: 'spin 0.6s linear infinite', display: 'inline-block' }} />
+                    <span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid color-mix(in srgb, var(--ink) 30%, transparent)', borderTopColor: 'var(--ink)', animation: 'spin 0.6s linear infinite', display: 'inline-block' }} />
                     Placing···
                   </span>
                 ) : 'Place order'}
