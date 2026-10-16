@@ -355,10 +355,10 @@ export default function MenuPage() {
   const groupNames = (i: MenuItem) => i.menu_item_modifiers
     .map(l => modifiers.find(m => m.id === l.modifier_id)?.name).filter((n): n is string => !!n)
 
-  // Each category (and add-on group) is an enamel sign over its stretch of
-  // the counter: a lit plate, the name hand-lettered in Bebas.
+  // Each category (and add-on group) is a section chalked on the one board:
+  // a chalk rule and the name, hand-lettered in Bebas.
   const sectionHeader = (title: string, meta?: string) => (
-    <div style={{ padding: '12px 16px 10px', background: 'var(--s2)', borderTop: '1px solid var(--border-hi)', borderBottom: '1px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--rim)', display: 'flex', alignItems: 'baseline', gap: 10 }}>
+    <div style={{ padding: '12px 16px 10px', borderTop: '1px solid var(--border-hi)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'baseline', gap: 10 }}>
       <h2 className="display" style={{ fontSize: 24, color: 'var(--t1)', lineHeight: 1, letterSpacing: '0.04em' }}>{title}</h2>
       {meta && <p className="data" style={{ fontSize: 11, color: 'var(--t2)', marginLeft: 'auto' }}>{meta}</p>}
     </div>
@@ -371,7 +371,7 @@ export default function MenuPage() {
     : !modifiers.some(m => shownOptions(m).length))
 
   return (
-    <div className="page-enter" style={{ maxWidth: 480, margin: '0 auto', paddingBottom: showJumpBar ? JUMP_BAR_HEIGHT + 24 : 32 }}>
+    <div className="page-enter" style={{ maxWidth: 480, margin: '0 auto', paddingBottom: showJumpBar ? 0 : 32 }}>
       <div style={{ padding: '16px 16px 12px' }}>
         <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95 }}>MENU</h1>
         <p role="status" style={{ fontSize: 12, color: 'var(--t2)', marginTop: 8 }}>
@@ -401,14 +401,18 @@ export default function MenuPage() {
         </p>
       )}
 
+      {/* One board per screen, sections chalked on it. With the jump bar
+          showing, the board runs on under it, so the bar is its bottom edge. */}
+      {!nothingOff && (
+      <div data-board style={{ paddingBottom: showJumpBar ? JUMP_BAR_HEIGHT + 24 : 0 }}>
       {view === 'items' && cats.map(cat => {
         const catItems = shownItems(cat.id)
         // Every category shows, even empty ones, so she can add to them —
         // except under "Off now", which shows only what's off.
         if (offOnly && !catItems.length) return null
         return (
-          <section key={cat.id} id={sectionId(cat.id)} aria-label={cat.name} data-board
-            style={{ marginBottom: 12, scrollMarginTop: 62 }}>
+          <section key={cat.id} id={sectionId(cat.id)} aria-label={cat.name}
+            style={{ scrollMarginTop: 62 }}>
             {sectionHeader(cat.name, `${catItems.length} item${catItems.length === 1 ? '' : 's'}`)}
             {catItems.map(item => (
               <MenuItemRow key={item.id} item={item} groupNames={groupNames(item)}
@@ -436,19 +440,21 @@ export default function MenuPage() {
         if (offOnly && !options.length) return null
         const n = usedBy(m.id)
         return (
-          <section key={m.id} aria-label={m.name} data-board style={{ marginBottom: 12 }}>
+          <section key={m.id} aria-label={m.name}>
             {sectionHeader(m.name, `${m.is_required ? 'Required · ' : ''}on ${n} item${n === 1 ? '' : 's'}`)}
             {options.map(o => <ModifierOptionRow key={o.id} option={o} />)}
           </section>
         )
       })}
+      </div>
+      )}
 
       {/* Category jump bar, pinned just above the bottom nav where the thumb
           is. Fixed, not sticky (sticky attaches to <main>, which doesn't
           scroll), and portalled to <body> so .page-enter's transform can't
           capture it. Under the item sheet (110) and the undo bar (105). */}
       {showJumpBar && createPortal(
-        <div data-board style={{ position: 'fixed', left: 0, right: 0, bottom: navHeight, maxWidth: 480, margin: '0 auto', zIndex: 101 }}>
+        <div data-board="foot" style={{ position: 'fixed', left: 0, right: 0, bottom: navHeight, maxWidth: 480, margin: '0 auto', zIndex: 101 }}>
           <CategoryBar kind="jump" label="Jump to category" cats={cats} active={activeCat ?? cats[0]?.id} onPick={jumpTo} />
         </div>,
         document.body,

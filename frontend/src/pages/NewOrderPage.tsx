@@ -281,8 +281,10 @@ export default function NewOrderPage() {
           style={{ flex: 1, padding: '8px 12px', fontSize: 12, borderRadius: 999, minHeight: 'var(--touch)' }} />
       </div>
 
+      {/* One board: the menu grid and its category tabs, in one frame. */}
+      <div data-board style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Menu grid */}
-      <div role="tabpanel" data-board style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+      <div role="tabpanel" style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {visible.map((item, idx) => (
             <button key={item.id} onClick={() => setSelItem(item)}
@@ -303,8 +305,9 @@ export default function NewOrderPage() {
 
       {/* Category tabs, pinned just above the cart bar: she switches
           category constantly, one-handed, so they sit where the thumb is. */}
-      <div data-board style={{ flexShrink: 0 }}>
+      <div style={{ flexShrink: 0 }}>
         <CategoryBar kind="tabs" label="Menu categories" cats={cats} active={cat} onPick={setActiveCat} />
+      </div>
       </div>
 
       {/* Cart bar */}

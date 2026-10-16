@@ -151,6 +151,25 @@
   outline:     3px solid var(--kraft);
   outline-offset: -3px;
 }
+/* Sections chalked on the board are divided by the next section's rule
+   alone: the last row of each section drops its own bottom line, so the
+   break is one 1px rule, not two. The rows set that line inline, hence
+   !important; a row can be the section's last child, or the last child of
+   an item's wrapper (row, price editor or error line). */
+[data-board] section > :last-child,
+[data-board] section > :last-child > :last-child { border-bottom: none !important; }
+/* A piece pinned over the bottom of the board (the Menu's jump bar): the
+   board's own bottom edge, so the frame runs down its sides and along its
+   bottom, with no top edge across the board. */
+[data-board="foot"] { outline: none; }
+[data-board="foot"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--kraft);
+  border-top: none;
+  pointer-events: none;
+}
 
 /* ─── Base ─── */
 @layer base {
