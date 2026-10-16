@@ -327,8 +327,8 @@ body::before {
     pointer-events: none;
   }
   /* Heat: how late it's running (lib/heat.ts). An ember edge along the top
-     that deepens as it gets later, and a warm cast underneath; never behind
-     text, except the late stamp (ink on ember, 6.39:1). The minutes are
+     that deepens as it gets later, a ring when hot, and the late stamp (ink
+     on ember, 6.39:1). Heat stays on the chit: no ember glow on the page. The minutes are
      always written on the chit too. Edge on paper: 2.25:1 warm, 3.12 warmer,
      4.42 hot. The ring at hot is outside the chit at night (3.39:1 on the
      background); by day ember can't hold 3:1 on the counter (2.30 at best),
@@ -344,10 +344,8 @@ body::before {
   .chit[data-heat="1"]::after { height: 3px; }
   .chit[data-heat="2"]::after { height: 4px; background: color-mix(in srgb, var(--ember), var(--ember-deep)); }
   .chit[data-heat="3"]::after { height: 6px; background: var(--ember-deep); }
-  .chit[data-heat="1"] { box-shadow: 0 12px 22px -14px color-mix(in srgb, var(--ember) 35%, transparent); }
-  .chit[data-heat="2"] { box-shadow: 0 14px 26px -12px color-mix(in srgb, var(--ember) 55%, transparent); }
-  .chit[data-heat="3"] { box-shadow: 0 0 0 2px var(--ember-deep), 0 16px 30px -10px color-mix(in srgb, var(--ember) 70%, transparent); }
-  [data-theme="light"] .chit[data-heat="3"] { box-shadow: inset 0 0 0 2px var(--ember-deep), 0 16px 30px -10px color-mix(in srgb, var(--ember) 70%, transparent); }
+  .chit[data-heat="3"] { box-shadow: 0 0 0 2px var(--ember-deep), 0 12px 22px -14px var(--cast); }
+  [data-theme="light"] .chit[data-heat="3"] { box-shadow: inset 0 0 0 2px var(--ember-deep), 0 12px 22px -14px var(--cast); }
 
   /* Status dot */
   .dot {
