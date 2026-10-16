@@ -77,7 +77,10 @@ export default function Layout() {
       <nav role="navigation" aria-label="Main navigation" style={{
         display: 'flex',
         background: 'var(--s1)',
-        borderTop: '1px solid var(--border)',
+        // A definite edge and a shadow cast upward, so it reads as a bar fixed
+        // above the page; by day it is otherwise the counter's own tan.
+        borderTop: '1px solid var(--border-hi)',
+        boxShadow: '0 -10px 20px -12px var(--cast)',
         position: 'sticky', bottom: 0, zIndex: 100,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
