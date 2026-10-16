@@ -12,7 +12,7 @@ export default {
     'dot', 'dot-pending', 'dot-brewing', 'dot-ready',
     'icon-btn', 'stepper-btn',
     'display', 'data', 'label',
-    'heat-border', 'heat-border-urgent',
+    'heat-border',
     'flip-wrapper', 'flip-card', 'flipping',
     'skeleton', 'page-enter', 'page-enter-child',
     'wake-banner', 'success-overlay', 'menu-card',

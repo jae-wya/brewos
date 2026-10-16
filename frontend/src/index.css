@@ -14,21 +14,13 @@
   --border:    #3A3028;
   --border-hi: #4A3E34;
 
-  /* Tungsten gradient accent */
-  --accent-a:  #FFB347;
-  --accent-b:  #FF6B35;
-  --accent:    #FFB347;
-  --accent-lo: #7A4A18;
-  --accent-bg: rgba(255,179,71,0.07);
-
   /* Text */
   --t1:        #F5EDE0;
   --t2:        #A89880;
   --t3:        #7A6858;
 
-  /* Status: the stall's own colours, no glow. Pending is the bulb's amber
-     (needs her), brewing the crema (in hand), ready sage (done, waiting). */
-  --pending:   #FFB347;
+  /* Status: the stall's own colours, no glow. Pending is the default state
+     and has none; brewing is the crema (in hand), ready sage (done, waiting). */
   --brewing:   #E2C9A6;
   --ready:     #B5C87A;
   --danger:    #FF4B4B;
@@ -46,8 +38,7 @@
   --lamp:      rgba(237,228,211,0.07); /* paper-warm light, not amber */
   --rim:       rgba(255,220,170,0.07);
   --cast:      rgba(0,0,0,0.55);
-  /* The chit: her paper order slip, and the ink written on it. */
-  --chit:      #F2E8D5;
+  /* The ink written on her chits. */
   --ink:       #1A1511;
   --ink-2:     #5A4734;
   /* An error written on the chit: red ink, 5.96:1 on the paper. */
@@ -93,17 +84,9 @@
   /* Control boundaries, 3.02:1 worst against the surfaces. */
   --border:    #605243;
   --border-hi: #4E4236;
-  /* Gradient ends: the logo and install card until they move to --brand-*. */
-  --accent-a:  #E8800A;
-  --accent-b:  #D65120;
-  /* Accent as text, until the menu, sales and nav commits stop reading it. */
-  --accent:    #522F04;
-  --accent-lo: #605243;
-  --accent-bg: rgba(82,47,4,0.08);
   --t1:        #1A1511; /* 7.08:1 worst */
   --t2:        #433528; /* 4.61 */
   --t3:        #40362B; /* 4.61 */
-  --pending:   #522F04;
   --brewing:   #4C3219; /* 4.61 */
   --ready:     #313B11; /* 4.65 */
   --danger:    #6F1212; /* 4.63; white on it 11.86 */
@@ -111,7 +94,6 @@
   --lamp:      rgba(255,206,140,0.12);
   --rim:       rgba(255,245,230,0.45);
   --cast:      rgba(60,40,20,0.32);
-  --chit:      #FFFFFF;
   --ink:       #1A1511;
   --ink-2:     #5A4734;
   --ink-danger: #A61B1B;
@@ -258,13 +240,6 @@ body::before {
     opacity: 0.7;
   }
   .heat-border > * { position: relative; z-index: 1; }
-
-  /* Heat pulse that shifts to danger for old orders */
-  .heat-border-urgent::before {
-    background: linear-gradient(135deg, var(--accent-b), var(--danger), var(--accent-b));
-    background-size: 200% 200%;
-    opacity: 0.9;
-  }
 
   /* ── Buttons ── */
   .btn {
@@ -540,15 +515,6 @@ body::before {
   }
   .page-enter-child {
     animation: childEnter 0.4s cubic-bezier(.22,1,.36,1) both;
-  }
-
-  /* Bottom nav slide indicator */
-  .nav-dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--accent);
-    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.2s;
   }
 
   /* Wake banner */

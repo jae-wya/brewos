@@ -10,8 +10,8 @@ import { peso } from '../lib/composer'
 // hand-lettered on one lit plate — the kind of board a stall hangs out
 // front — rather than a grid of stat tiles. Each line is a short sentence;
 // the figures lead by size, in the text colour. The two lines that lead
-// somewhere are links: takings
-// to Daily sales, the rail to the Queue (the same "rail" the chits hang on).
+// somewhere are links: takings to Daily sales, the rail to the Queue (the
+// same "rail" the chits hang on).
 
 function SignLine({ figure, words, color, to, label }: {
   figure: string, words: string, color: string, to?: string, label?: string
