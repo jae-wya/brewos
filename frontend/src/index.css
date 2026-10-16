@@ -276,6 +276,7 @@ body::before {
      shadow cast down onto the counter. Ink on paper, 14.35:1. */
   .chit {
     position: relative;
+    isolation: isolate;
     background: var(--paper);
     color: var(--ink);
     border-radius: 2px 2px var(--r) var(--r);
@@ -284,9 +285,12 @@ body::before {
   /* By day paper is 1.18:1 on the background; its edge is ink-grey, 3.32:1. */
   [data-theme="light"] .chit { border: 1px solid color-mix(in srgb, var(--ink) 45%, var(--paper)); }
   .chit :focus-visible { outline-color: var(--ink); }
+  /* The torn top sits above the heat edge, so the edge reads as torn paper
+     at every heat level. isolation keeps that z-index inside the chit. */
   .chit::before {
     content: '';
     position: absolute;
+    z-index: 1;
     top: -3px; left: 6px; right: 6px; height: 6px;
     background: radial-gradient(circle at 5px 3px, var(--bg) 2.4px, transparent 2.8px) 0 0 / 10px 6px repeat-x;
     pointer-events: none;
