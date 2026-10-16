@@ -69,6 +69,7 @@
   --slate:      #232019;
   --ember-deep: #C1340C;
   --kraft:      #C9A27A;
+  --on-kraft:   var(--ink);
   /* The brand gradient: the app icon and the install card only. */
   --brand-a:    #FFB347;
   --brand-b:    #FF6B35;
@@ -78,44 +79,47 @@
 }
 
 [data-theme="light"] {
-  --bg:        #FDF6EE;
-  --s1:        #FFFFFF;
-  --s2:        #F5EDE2;
-  --s3:        #EAE0D4;
-  --border:    #DDD0C0;
-  --border-hi: #C8B8A0;
-  /* Gradient ends: fills only (primary buttons, logo). #D65120, not
-     #D45020, so dark button text clears 4.5:1 at the darker end. */
+  /* Daylight on the counter: pale wood, not a white page. Paper rests on it
+     barely lighter (1.92:1), as paper on pale wood does; the chit is known by
+     its torn edge, its ink-grey outline and its shadow, not its fill. The
+     counter is this light because labels still sit directly on it and need
+     4.5:1 (see "Known design debt" in CLAUDE.md). Every text colour below is
+     the lightest shade of its own hue at 4.6:1 on every light surface,
+     including the lamp-lit top of the page. */
+  --bg:        #B9A389;
+  --s1:        #BEA990;
+  --s2:        #B5A187;
+  --s3:        #B29F87;
+  /* Control boundaries, 3.02:1 worst against the surfaces. */
+  --border:    #605243;
+  --border-hi: #4E4236;
+  /* Gradient ends: the logo and install card until they move to --brand-*. */
   --accent-a:  #E8800A;
   --accent-b:  #D65120;
-  /* Accent as TEXT (prices, links, selected chips). #E8800A was 2.8:1 on
-     white; this is the brightest tungsten-hue orange at 4.5:1 on every
-     light surface (4.53 worst, 5.9 on white). */
-  --accent:    #975307;
-  --accent-lo: #7A4008;
-  --accent-bg: rgba(232,128,10,0.07);
-  --t1:        #1A1208;
-  --t2:        #6A5848;
-  --t3:        #9A8878;
-  /* Status colours as text: each the nearest shade of its own hue at 4.5:1
-     on every light surface (were 2.7-4.3). Pending matches accent, as in
-     the dark theme. */
-  --pending:   #975307;
-  --brewing:   #6E4E2C; /* 5.8:1 worst */
-  --ready:     #4D6519; /* 5.0:1 worst */
-  --danger:    #B81C1C;
-  /* The stall by day: no bulb, a warm daylight wash from above. */
-  --lamp:      rgba(255,206,140,0.30);
-  --rim:       rgba(255,255,255,0.9);
-  --cast:      rgba(90,60,30,0.16);
+  /* Accent as text, until the menu, sales and nav commits stop reading it. */
+  --accent:    #522F04;
+  --accent-lo: #605243;
+  --accent-bg: rgba(82,47,4,0.08);
+  --t1:        #1A1511; /* 7.08:1 worst */
+  --t2:        #433528; /* 4.61 */
+  --t3:        #40362B; /* 4.61 */
+  --pending:   #522F04;
+  --brewing:   #4C3219; /* 4.61 */
+  --ready:     #313B11; /* 4.65 */
+  --danger:    #6F1212; /* 4.63; white on it 11.86 */
+  /* No bulb by day, only a faint warm wash. */
+  --lamp:      rgba(255,206,140,0.12);
+  --rim:       rgba(255,245,230,0.45);
+  --cast:      rgba(60,40,20,0.32);
   --chit:      #FFFFFF;
   --ink:       #1A1511;
   --ink-2:     #5A4734;
   --ink-danger: #A61B1B;
-  /* Paper, ink, chalk, slate and ember-deep are the same by day. Kraft
-     darkens: #C9A27A is 2.19:1 against the light background, this is 3.48
-     (ink on it 4.85). */
-  --kraft:     #A67C52;
+  /* Paper, ink, chalk, slate and ember are the same by day. Kraft goes
+     dark so it holds 3:1 on the counter (3.09 worst), and takes paper text
+     (5.94:1). */
+  --kraft:     #6C4F31;
+  --on-kraft:  var(--paper);
 }
 
 /* ─── Base ─── */
@@ -235,11 +239,11 @@ body::before {
   .btn:active:not(:disabled) { transform: scale(0.96); }
   .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-  /* Primary button off paper: solid kraft, ink text (7.71:1; 4.85 by
-     day). On a chit the primary is ink on paper instead (QueuePage). */
+  /* Primary button off paper: solid kraft (ink text 7.71:1 at night, paper
+     text 5.94:1 by day). On a chit the primary is ink on paper instead. */
   .btn-fire {
     background: var(--kraft);
-    color: var(--ink);
+    color: var(--on-kraft);
     /* Lit from above (catch-light on top), casting a shadow down — not an
        outward neon glow. */
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 16px -8px var(--cast);
@@ -282,8 +286,9 @@ body::before {
     border-radius: 2px 2px var(--r) var(--r);
     box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 12px 22px -14px var(--cast);
   }
-  /* By day paper is 1.18:1 on the background; its edge is ink-grey, 3.32:1. */
-  [data-theme="light"] .chit { border: 1px solid color-mix(in srgb, var(--ink) 45%, var(--paper)); }
+  /* By day paper is barely lighter than the counter (1.92:1): an ink-grey
+     outline, 3.23:1 against the paper, draws its edge. */
+  [data-theme="light"] .chit { border: 1px solid color-mix(in srgb, var(--ink) 50%, var(--paper)); }
   .chit :focus-visible { outline-color: var(--ink); }
   /* The torn top sits above the heat edge, so the edge reads as torn paper
      at every heat level. isolation keeps that z-index inside the chit. */
@@ -299,7 +304,9 @@ body::before {
      that deepens as it gets later, and a warm cast underneath; never behind
      text, except the late stamp (ink on ember, 6.39:1). The minutes are
      always written on the chit too. Edge on paper: 2.25:1 warm, 3.12 warmer,
-     4.42 hot; the ring at hot is 3.39:1 on the night background, 5.21 by day. */
+     4.42 hot. The ring at hot is outside the chit at night (3.39:1 on the
+     background); by day ember can't hold 3:1 on the counter (2.30 at best),
+     so the ring is drawn inside, on the paper (4.42). */
   .chit::after {
     content: '';
     position: absolute;
@@ -314,6 +321,7 @@ body::before {
   .chit[data-heat="1"] { box-shadow: 0 12px 22px -14px color-mix(in srgb, var(--ember) 35%, transparent); }
   .chit[data-heat="2"] { box-shadow: 0 14px 26px -12px color-mix(in srgb, var(--ember) 55%, transparent); }
   .chit[data-heat="3"] { box-shadow: 0 0 0 2px var(--ember-deep), 0 16px 30px -10px color-mix(in srgb, var(--ember) 70%, transparent); }
+  [data-theme="light"] .chit[data-heat="3"] { box-shadow: inset 0 0 0 2px var(--ember-deep), 0 16px 30px -10px color-mix(in srgb, var(--ember) 70%, transparent); }
 
   /* Status dot */
   .dot {
