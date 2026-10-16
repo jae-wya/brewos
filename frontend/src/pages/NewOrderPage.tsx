@@ -369,7 +369,7 @@ export default function NewOrderPage() {
                     </div>
                   } />
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 12, borderTop: '1px dashed rgba(26,18,8,0.3)', marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 12, borderTop: '1px dashed color-mix(in srgb, var(--ink) 30%, transparent)', marginTop: 4 }}>
                   <span className="data" style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-2)', letterSpacing: '0.08em' }}>TOTAL</span>
                   <span className="display" style={{ fontSize: 40, color: 'var(--ink)', lineHeight: 0.9 }}>{peso(total)}</span>
                 </div>

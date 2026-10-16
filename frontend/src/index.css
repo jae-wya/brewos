@@ -50,9 +50,9 @@
   --chit:      #F2E8D5;
   --ink:       #1A1511;
   --ink-2:     #5A4734;
-  /* An error written on the chit: red ink, 6.2:1 on the paper (7.5 on white). */
+  /* An error written on the chit: red ink, 5.96:1 on the paper. */
   --ink-danger: #A61B1B;
-  /* Heat on a chit running late; never behind text. */
+  /* Heat on a chit running late; the only text on it is the late stamp. */
   --ember:     #FF6B35;
 
   /* The counter's materials. Each has one job:
@@ -112,7 +112,6 @@
   --ink:       #1A1511;
   --ink-2:     #5A4734;
   --ink-danger: #A61B1B;
-  --ember:     #DC5F2C; /* ink on it 5.0:1 (the late stamp); outline on white 3.7:1 */
   /* Paper, ink, chalk, slate and ember-deep are the same by day. Kraft
      darkens: #C9A27A is 2.19:1 against the light background, this is 3.48
      (ink on it 4.85). */
@@ -274,15 +273,16 @@ body::before {
   .icon-btn:hover { background: var(--s3); }
 
   /* The chit: her paper slip. Perforated top where it tore off the pad;
-     shadow cast down onto the counter. Ink on paper, ~15:1. */
+     shadow cast down onto the counter. Ink on paper, 14.35:1. */
   .chit {
     position: relative;
-    background: var(--chit);
+    background: var(--paper);
     color: var(--ink);
     border-radius: 2px 2px var(--r) var(--r);
     box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 12px 22px -14px var(--cast);
   }
-  [data-theme="light"] .chit { border: 1px solid var(--border); }
+  /* By day paper is 1.18:1 on the background; its edge is ink-grey, 3.32:1. */
+  [data-theme="light"] .chit { border: 1px solid color-mix(in srgb, var(--ink) 45%, var(--paper)); }
   .chit :focus-visible { outline-color: var(--ink); }
   .chit::before {
     content: '';
@@ -292,8 +292,10 @@ body::before {
     pointer-events: none;
   }
   /* Heat: how late it's running (lib/heat.ts). An ember edge along the top
-     and a warm cast underneath, never behind text; the minutes are always
-     written on the chit too. */
+     that deepens as it gets later, and a warm cast underneath; never behind
+     text, except the late stamp (ink on ember, 6.39:1). The minutes are
+     always written on the chit too. Edge on paper: 2.25:1 warm, 3.12 warmer,
+     4.42 hot; the ring at hot is 3.39:1 on the night background, 5.21 by day. */
   .chit::after {
     content: '';
     position: absolute;
@@ -302,12 +304,12 @@ body::before {
     background: var(--ember);
     pointer-events: none;
   }
-  .chit[data-heat="1"]::after { height: 3px; opacity: 0.45; }
-  .chit[data-heat="2"]::after { height: 4px; opacity: 0.75; }
-  .chit[data-heat="3"]::after { height: 6px; opacity: 1; }
-  .chit[data-heat="1"] { box-shadow: 0 12px 22px -14px rgba(255,107,53,0.35); }
-  .chit[data-heat="2"] { box-shadow: 0 14px 26px -12px rgba(255,107,53,0.55); }
-  .chit[data-heat="3"] { box-shadow: 0 0 0 2px var(--ember), 0 16px 30px -10px rgba(255,107,53,0.7); }
+  .chit[data-heat="1"]::after { height: 3px; }
+  .chit[data-heat="2"]::after { height: 4px; background: color-mix(in srgb, var(--ember), var(--ember-deep)); }
+  .chit[data-heat="3"]::after { height: 6px; background: var(--ember-deep); }
+  .chit[data-heat="1"] { box-shadow: 0 12px 22px -14px color-mix(in srgb, var(--ember) 35%, transparent); }
+  .chit[data-heat="2"] { box-shadow: 0 14px 26px -12px color-mix(in srgb, var(--ember) 55%, transparent); }
+  .chit[data-heat="3"] { box-shadow: 0 0 0 2px var(--ember-deep), 0 16px 30px -10px color-mix(in srgb, var(--ember) 70%, transparent); }
 
   /* Status dot */
   .dot {
@@ -316,7 +318,8 @@ body::before {
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .dot-pending { background: var(--pending); }
+  /* Pending is the default state, so it isn't marked: no dot, no colour. */
+  .dot-pending { background: transparent; }
   .dot-brewing { background: var(--brewing); }
   .dot-ready   { background: var(--ready);   }
 
@@ -333,7 +336,7 @@ body::before {
     border-radius: var(--r);
     font-family: 'Figtree', sans-serif;
   }
-  .badge-pending  { background: rgba(255,179,71,0.12);  color: var(--pending); }
+  .badge-pending  { background: transparent;           color: var(--t1); }
   .badge-brewing  { background: color-mix(in srgb, var(--brewing) 12%, transparent); color: var(--brewing); }
   .badge-ready    { background: color-mix(in srgb, var(--ready) 12%, transparent);   color: var(--ready);   }
   .badge-done     { background: var(--s3);              color: var(--t2); }

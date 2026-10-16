@@ -27,7 +27,7 @@ export default function OrderLine({
   const soft = chit ? 'var(--ink-2)' : 'var(--t2)'
 
   return (
-    <div className="kds-row" style={chit ? { borderBottomColor: 'rgba(26,18,8,0.14)', alignItems: 'baseline' } : undefined}>
+    <div className="kds-row" style={chit ? { borderBottomColor: 'color-mix(in srgb, var(--ink) 14%, transparent)', alignItems: 'baseline' } : undefined}>
       <span className={chit ? 'display' : 'data'} style={{ fontSize: chit ? 22 : 12, fontWeight: 700, color: strong, flexShrink: 0, minWidth: chit ? 26 : 20, lineHeight: chit ? 1 : 1.4 }}>
         {quantity}×
       </span>
