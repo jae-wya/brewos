@@ -48,12 +48,30 @@
   --cast:      rgba(0,0,0,0.55);
   /* The chit: her paper order slip, and the ink written on it. */
   --chit:      #F2E8D5;
-  --ink:       #1A1208;
+  --ink:       #1A1511;
   --ink-2:     #5A4734;
   /* An error written on the chit: red ink, 6.2:1 on the paper (7.5 on white). */
   --ink-danger: #A61B1B;
   /* Heat on a chit running late; never behind text. */
   --ember:     #FF6B35;
+
+  /* The counter's materials. Each has one job:
+       paper  chits and the order pad, anything she writes on
+       ink    text on paper, and the primary button on paper
+       chalk on slate  the menu, the things she sets rather than reads
+       ember  heat and lateness, nothing else; deepens as it gets later
+       kraft  the primary button off paper (the cup sleeve, not a flame)
+     Contrast: ink on paper 14.35:1, chalk on slate 10.80:1, ink on kraft
+     7.71:1, ink on ember 6.39:1 (the late stamp). Ember-deep is 4.42:1 on
+     paper; no text sits on it. */
+  --paper:      #EDE4D3;
+  --chalk:      #D8D2C6;
+  --slate:      #232019;
+  --ember-deep: #C1340C;
+  --kraft:      #C9A27A;
+  /* The brand gradient: the app icon and the install card only. */
+  --brand-a:    #FFB347;
+  --brand-b:    #FF6B35;
 
   /* Grain texture */
   --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
@@ -91,10 +109,14 @@
   --rim:       rgba(255,255,255,0.9);
   --cast:      rgba(90,60,30,0.16);
   --chit:      #FFFFFF;
-  --ink:       #1A1208;
+  --ink:       #1A1511;
   --ink-2:     #5A4734;
   --ink-danger: #A61B1B;
   --ember:     #DC5F2C; /* ink on it 5.0:1 (the late stamp); outline on white 3.7:1 */
+  /* Paper, ink, chalk, slate and ember-deep are the same by day. Kraft
+     darkens: #C9A27A is 2.19:1 against the light background, this is 3.48
+     (ink on it 4.85). */
+  --kraft:     #A67C52;
 }
 
 /* ─── Base ─── */
