@@ -166,3 +166,9 @@ Paper sitting only ~2:1 lighter than that counter is deliberate, not part of
 the debt: paper on pale wood in daylight is barely lighter than the wood, and
 a chit is identified by its torn edge and its writing, not its fill. A red
 error she has to notice outranks a 3:1 edge she doesn't.
+
+**Check on her phone: the perforation by day.** The chit's torn edge is the
+signature element of the design. By day its holes are counter-coloured on
+paper, only 1.92:1, which is logically right but quiet. If the torn edge
+disappears on her phone in daylight, the fix is a faint ink rim on each hole,
+not a brighter fill.
