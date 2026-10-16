@@ -44,10 +44,10 @@ export default function LoginPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 10,
-            background: 'linear-gradient(135deg, var(--accent-a), var(--accent-b))',
+            background: 'var(--kraft)', color: 'var(--on-kraft)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Coffee size={20} color="#14100C" strokeWidth={2.5} aria-hidden="true" />
+            <Coffee size={20} strokeWidth={2.5} aria-hidden="true" />
           </div>
           <div>
             <h1 className="display" style={{ fontSize: 36, color: 'var(--t1)', lineHeight: 1 }}>BREWOS</h1>
@@ -58,9 +58,9 @@ export default function LoginPage() {
         {waking && (
           <div className="wake-banner" role="status" style={{
             padding: '10px 14px', marginBottom: 16,
-            background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)',
+            background: 'var(--s2)', border: '1px solid var(--border-hi)', borderRadius: 'var(--r)',
           }}>
-            <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t2)', letterSpacing: '0.06em' }}>
               WAKING SERVER UP··· THIS CAN TAKE 30 SECONDS
             </span>
           </div>
@@ -69,7 +69,7 @@ export default function LoginPage() {
         {error && (
           <div role="alert" style={{
             padding: '12px 16px', marginBottom: 16,
-            background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)',
+            background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)', borderRadius: 'var(--r)',
             fontSize: 13, color: 'var(--danger)',
           }}>
             {error}

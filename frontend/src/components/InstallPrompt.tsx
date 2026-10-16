@@ -20,9 +20,10 @@ const ABOVE_NAV = { bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))', zIn
 // .btn-fire / .btn-ghost are colours only; .btn gives padding, shape and
 // height. Without it the buttons rendered 23px tall with no padding.
 const TOUCH = { minHeight: 'var(--touch)' }
-// .heat-border paints its gradient over the whole box; it reads as a glowing
-// edge only when the content has its own background (as on the queue cards).
-// Without this inner box the bar was orange all over and the label unreadable.
+// .heat-border paints the brand gradient over the whole box; it reads as a
+// frame only when the content has its own background. Without this inner box
+// the bar was orange all over and the label unreadable. The gradient is
+// branding, so only the install card wears it; the update card is a panel.
 const HEAT_INNER = { background: 'var(--s1)', borderRadius: 'var(--r)' }
 // .label's --t3 is about 3.3:1 on --s1, too faint for 10px text on a bar she
 // glances at; --t2 is about 6.3:1.
@@ -97,7 +98,7 @@ export default function InstallPrompt() {
   // --- Update available ------------------------------------------------
   if (needRefresh) {
     return (
-      <div className="fixed left-4 right-4 heat-border" style={ABOVE_NAV}>
+      <div className="fixed left-4 right-4 panel" style={ABOVE_NAV}>
       <div className="p-4 flex items-center gap-3" style={HEAT_INNER}>
         <div className="flex-1">
           <p className="label" style={LABEL}>Update ready</p>

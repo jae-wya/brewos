@@ -25,7 +25,7 @@ function Row({ order, idx }: { order: Order, idx: number }) {
   return (
     <article className="panel page-enter-child" style={{ marginBottom: 8, animationDelay: `${idx * 40}ms` }} aria-label={`Order ${order.order_number}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px 8px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
-        <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{order.order_number}</span>
+        <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>{order.order_number}</span>
         <span className={`badge ${S_BADGE[order.status]}`}>{S_LABEL[order.status]}</span>
         {order.source === 'messenger' && (
           <span className="badge" style={{ background: 'color-mix(in srgb, var(--brewing) 8%, transparent)', color: 'var(--brewing)' }}>DM</span>
@@ -41,7 +41,7 @@ function Row({ order, idx }: { order: Order, idx: number }) {
           </p>
         )}
         {order.notes && (
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginBottom: 6 }}>{order.notes}</p>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--t1)', marginBottom: 6 }}>{order.notes}</p>
         )}
         <div style={{ marginBottom: 10 }}>
           {order.order_items.map(item => (
@@ -87,13 +87,13 @@ export default function OrdersPage() {
       <h1 className="display" style={{ fontSize: 40, color: 'var(--t1)', lineHeight: 0.95, marginBottom: 20 }}>ORDERS</h1>
 
       {waking && (
-        <div className="wake-banner" style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)' }}>
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>WAKING SERVER···</span>
+        <div className="wake-banner" style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--s2)', border: '1px solid var(--border-hi)', borderRadius: 'var(--r)' }}>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t2)', letterSpacing: '0.06em' }}>WAKING SERVER···</span>
         </div>
       )}
 
       {isError && (
-        <div style={{ padding: '12px 16px', marginBottom: 12, background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 16px', marginBottom: 12, background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--danger)' }}>COULDN'T LOAD ORDERS</span>
           <button onClick={() => refetch()} className="btn btn-danger" style={{ padding: '6px 14px', fontSize: 11 }}>Retry</button>
         </div>

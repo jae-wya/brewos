@@ -150,7 +150,7 @@ function SuccessOverlay({ orderNumber, onDone }: { orderNumber: string, onDone: 
       </div>
       <div style={{ textAlign: 'center' }}>
         <p className="display" style={{ fontSize: 40, color: 'var(--t1)', marginBottom: 8 }}>ORDER PLACED</p>
-        <p className="data" style={{ fontSize: 22, color: 'var(--accent)', fontWeight: 700 }}>{orderNumber}</p>
+        <p className="data" style={{ fontSize: 22, color: 'var(--t1)', fontWeight: 700 }}>{orderNumber}</p>
         <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', marginTop: 10, letterSpacing: '0.08em' }}>
           ADDED TO QUEUE
         </p>
@@ -330,7 +330,7 @@ export default function NewOrderPage() {
           drew over its bottom and Place order sat flush against it. */}
       {showCart && createPortal(
         <div role="dialog" aria-modal="true" aria-label="Order summary"
-          style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'color-mix(in srgb, var(--ink) 92%, transparent)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div style={{
             width: '100%', maxWidth: 480,
             background: 'var(--s1)',

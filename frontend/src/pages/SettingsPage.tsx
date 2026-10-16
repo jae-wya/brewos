@@ -137,7 +137,7 @@ export default function SettingsPage() {
           )}
           <button onClick={() => { setTemplate(data.default_template); setStatus({}) }}
             disabled={template === data.default_template}
-            style={{ marginTop: 6, minHeight: 'var(--touch)', padding: '0 4px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--accent)', opacity: template === data.default_template ? 0.4 : 1 }}>
+            style={{ marginTop: 6, minHeight: 'var(--touch)', padding: '0 4px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--t1)', opacity: template === data.default_template ? 0.4 : 1 }}>
             Reset to the default message
           </button>
 

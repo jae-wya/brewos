@@ -144,13 +144,13 @@ export default function QueuePage() {
       </div>
 
       {waking && (
-        <div className="wake-banner" style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)', borderRadius: 'var(--r)' }}>
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.06em' }}>WAKING SERVER···</span>
+        <div className="wake-banner" style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--s2)', border: '1px solid var(--border-hi)', borderRadius: 'var(--r)' }}>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--t2)', letterSpacing: '0.06em' }}>WAKING SERVER···</span>
         </div>
       )}
 
       {isError && (
-        <div style={{ padding: '12px 16px', marginBottom: 12, background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 16px', marginBottom: 12, background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--danger)' }}>SERVER UNREACHABLE</span>
           <button onClick={() => refetch()} className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 10 }}>Retry</button>
         </div>

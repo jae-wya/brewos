@@ -32,15 +32,16 @@ export default function Layout() {
             here: it's rare and destructive, and next to New order it was a
             mis-tap away mid-shift. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          {/* Logo mark — gradient square */}
+          {/* Logo mark: solid kraft. The brand gradient is only on the app
+              icon and the install card. */}
           <div style={{
             width: 32, height: 32, flexShrink: 0,
-            background: 'linear-gradient(135deg, var(--accent-a), var(--accent-b))',
+            background: 'var(--kraft)', color: 'var(--on-kraft)',
             borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 12px rgba(255,107,53,0.3)',
+            boxShadow: '0 6px 12px -6px var(--cast)',
           }}>
-            <Coffee size={16} color="#14100C" strokeWidth={2.5} aria-hidden="true" />
+            <Coffee size={16} strokeWidth={2.5} aria-hidden="true" />
           </div>
           <div style={{ minWidth: 0 }}>
             <div className="display" style={{ fontSize: 20, color: 'var(--t1)', lineHeight: 1 }}>
@@ -94,11 +95,12 @@ export default function Layout() {
               textDecoration: 'none',
               fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 600,
               letterSpacing: '0.06em',
-              color: isActive ? 'var(--accent)' : 'var(--t2)',
+              // Active tab in the text colour: a state, not lateness, so never ember.
+              color: isActive ? 'var(--t1)' : 'var(--t2)',
               minHeight: 'var(--touch)',
               transition: 'color 0.15s',
               borderTop: isActive
-                ? '2px solid var(--accent-b)'
+                ? '2px solid var(--t1)'
                 : '2px solid transparent',
             })}>
             {({ isActive }) => (
