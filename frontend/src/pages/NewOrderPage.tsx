@@ -282,7 +282,7 @@ export default function NewOrderPage() {
       </div>
 
       {/* Menu grid */}
-      <div role="tabpanel" style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+      <div role="tabpanel" data-board style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {visible.map((item, idx) => (
             <button key={item.id} onClick={() => setSelItem(item)}
@@ -290,7 +290,7 @@ export default function NewOrderPage() {
               aria-label={`${item.name}`}
               style={{ padding: '14px', textAlign: 'left', animation: `childEnter 0.3s ${idx * 30}ms both` }}>
               <p className="display" style={{ fontSize: 22, color: 'var(--t1)', lineHeight: 1, letterSpacing: '0.02em', marginBottom: 8 }}>{item.name}</p>
-              <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>&#8369;{item.base_price}</p>
+              <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)' }}>&#8369;{item.base_price}</p>
             </button>
           ))}
           {!visible.length && (
@@ -303,7 +303,7 @@ export default function NewOrderPage() {
 
       {/* Category tabs, pinned just above the cart bar: she switches
           category constantly, one-handed, so they sit where the thumb is. */}
-      <div style={{ flexShrink: 0 }}>
+      <div data-board style={{ flexShrink: 0 }}>
         <CategoryBar kind="tabs" label="Menu categories" cats={cats} active={cat} onPick={setActiveCat} />
       </div>
 

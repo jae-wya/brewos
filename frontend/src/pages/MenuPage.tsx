@@ -67,7 +67,7 @@ function ModifierOptionRow({ option }: { option: ModifierOption }) {
           {option.name}{!on && <OffTag />}
         </p>
         {option.price_delta > 0 && (
-          <p className="data" style={{ fontSize: 12, color: 'var(--accent)', marginTop: 2 }}>+&#8369;{option.price_delta}</p>
+          <p className="data" style={{ fontSize: 12, color: 'var(--t1)', marginTop: 2 }}>+&#8369;{option.price_delta}</p>
         )}
       </div>
       <button
@@ -188,7 +188,7 @@ function MenuItemRow({ item, groupNames, onOpen }: {
             minWidth: 64, minHeight: 'var(--touch)', padding: '0 8px', marginLeft: 8,
             background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right',
             fontSize: 14, fontWeight: 700,
-            color: 'var(--accent)',
+            color: 'var(--t1)',
             textDecoration: editing ? 'underline' : 'none',
           }}>
           &#8369;{item.base_price}
@@ -407,7 +407,7 @@ export default function MenuPage() {
         // except under "Off now", which shows only what's off.
         if (offOnly && !catItems.length) return null
         return (
-          <section key={cat.id} id={sectionId(cat.id)} aria-label={cat.name}
+          <section key={cat.id} id={sectionId(cat.id)} aria-label={cat.name} data-board
             style={{ marginBottom: 12, scrollMarginTop: 62 }}>
             {sectionHeader(cat.name, `${catItems.length} item${catItems.length === 1 ? '' : 's'}`)}
             {catItems.map(item => (
@@ -421,7 +421,7 @@ export default function MenuPage() {
                   display: 'flex', alignItems: 'center', gap: 6, width: '100%',
                   minHeight: 52, padding: '0 16px',
                   background: 'var(--s1)', border: 'none', borderBottom: '1px solid var(--border)',
-                  cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--accent)',
+                  cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--t1)',
                 }}>
                 <Plus size={14} strokeWidth={2.5} aria-hidden="true" />
                 Add item
@@ -436,7 +436,7 @@ export default function MenuPage() {
         if (offOnly && !options.length) return null
         const n = usedBy(m.id)
         return (
-          <section key={m.id} aria-label={m.name} style={{ marginBottom: 12 }}>
+          <section key={m.id} aria-label={m.name} data-board style={{ marginBottom: 12 }}>
             {sectionHeader(m.name, `${m.is_required ? 'Required · ' : ''}on ${n} item${n === 1 ? '' : 's'}`)}
             {options.map(o => <ModifierOptionRow key={o.id} option={o} />)}
           </section>
@@ -448,7 +448,7 @@ export default function MenuPage() {
           scroll), and portalled to <body> so .page-enter's transform can't
           capture it. Under the item sheet (110) and the undo bar (105). */}
       {showJumpBar && createPortal(
-        <div style={{ position: 'fixed', left: 0, right: 0, bottom: navHeight, maxWidth: 480, margin: '0 auto', zIndex: 101 }}>
+        <div data-board style={{ position: 'fixed', left: 0, right: 0, bottom: navHeight, maxWidth: 480, margin: '0 auto', zIndex: 101 }}>
           <CategoryBar kind="jump" label="Jump to category" cats={cats} active={activeCat ?? cats[0]?.id} onPick={jumpTo} />
         </div>,
         document.body,
@@ -465,7 +465,7 @@ export default function MenuPage() {
         {bar && (
           <div className="panel" style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '6px 6px 6px 16px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.2s both',
+            boxShadow: '0 8px 24px var(--cast)', animation: 'fadeIn 0.2s both',
           }}>
             <p style={{ flex: 1, fontSize: 13, color: 'var(--t1)', padding: '8px 0' }}>{bar.text}</p>
             {bar.onUndo && (

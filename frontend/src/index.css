@@ -122,6 +122,32 @@
   --on-kraft:  var(--paper);
 }
 
+/* The board: chalk on slate, in both themes. The menu and the things she
+   sets rather than reads. Anything inside [data-board] reads these instead
+   of the counter's surfaces, so chips, toggles, fields and buttons follow.
+   Chalk on slate 10.80:1 (8.10 on the darkest plate); secondary chalk 4.68
+   worst; ruling and control lines 3.19 worst; red 4.86 worst; kraft keeps its
+   night value, 6.91 against slate (ink on it 7.71). Slate is 6.70:1 on the
+   day counter and needs no border; at night it is 1.16, and the board's
+   edge is carried by its plates and ruling. */
+[data-board] {
+  --s1:        var(--slate);
+  --s2:        #2E2B23;
+  --s3:        #39352E;
+  --border:    #878278;
+  --border-hi: #A5A096;
+  --t1:        var(--chalk);
+  --t2:        #A5A096;
+  --t3:        #A5A096;
+  --danger:    #FF7A85;
+  --kraft:     #C9A27A;
+  --on-kraft:  var(--ink);
+  --rim:       rgba(216,210,198,0.06);
+  --cast:      rgba(0,0,0,0.55);
+  background:  var(--slate);
+  color:       var(--chalk);
+}
+
 /* ─── Base ─── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
@@ -534,7 +560,7 @@ body::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,179,71,0.15) 0%, transparent 60%);
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), color-mix(in srgb, var(--chalk) 15%, transparent) 0%, transparent 60%);
     opacity: 0;
     transition: opacity 0.3s;
   }

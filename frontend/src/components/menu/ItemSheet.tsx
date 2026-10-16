@@ -68,8 +68,8 @@ export default function ItemSheet({ menu, item, categoryId, draft, error: initia
   // the nav can't cover Delete.
   return createPortal(
     <div onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={item ? `Edit ${item.name}` : 'New item'}
+      style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'color-mix(in srgb, var(--ink) 92%, transparent)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} data-board role="dialog" aria-modal="true" aria-label={item ? `Edit ${item.name}` : 'New item'}
         style={{
           width: '100%', maxWidth: 480,
           background: 'var(--s1)',
