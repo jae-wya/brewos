@@ -24,12 +24,11 @@ const longDate = (day: string) => new Date(`${day}T00:00:00Z`)
 
 function Stat({ label, value, wide }: { label: string, value: string, wide?: boolean }) {
   return (
-    <div className="panel" style={{
-      gridColumn: wide ? '1 / -1' : undefined, padding: 16,
-      ...(wide && { background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)' }),
-    }}>
+    // Revenue leads by size alone: no accent tint, since colour marks only
+    // lateness (ember) and errors.
+    <div className="panel" style={{ gridColumn: wide ? '1 / -1' : undefined, padding: 16 }}>
       <span className="label">{label}</span>
-      <div className="data" style={{ fontSize: wide ? 36 : 24, fontWeight: 700, color: wide ? 'var(--accent)' : 'var(--t1)', marginTop: 8, lineHeight: 1 }}>
+      <div className="data" style={{ fontSize: wide ? 36 : 24, fontWeight: 700, color: 'var(--t1)', marginTop: 8, lineHeight: 1 }}>
         {value}
       </div>
     </div>
@@ -113,7 +112,7 @@ export default function SalesPage() {
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{t.name}</p>
                   {t.category && <p style={{ fontSize: 12, color: 'var(--t2)', marginTop: 1 }}>{t.category}</p>}
                 </div>
-                <span className="data" style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)' }}>&times;{t.quantity}</span>
+                <span className="data" style={{ fontSize: 15, fontWeight: 700, color: 'var(--t1)' }}>&times;{t.quantity}</span>
               </div>
             )) : (
               <p role="status" style={{ padding: '6px 16px 16px', fontSize: 13, color: 'var(--t2)' }}>

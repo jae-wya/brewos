@@ -9,7 +9,8 @@ import { peso } from '../lib/composer'
 // The first screen she sees on every open: the stall's sign for the day,
 // hand-lettered on one lit plate — the kind of board a stall hangs out
 // front — rather than a grid of stat tiles. Each line is a short sentence;
-// the figures are lit. The two lines that lead somewhere are links: takings
+// the figures lead by size, in the text colour. The two lines that lead
+// somewhere are links: takings
 // to Daily sales, the rail to the Queue (the same "rail" the chits hang on).
 
 function SignLine({ figure, words, color, to, label }: {
@@ -61,18 +62,18 @@ export default function DashboardPage() {
         <div className="wake-banner" style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '10px 14px', marginBottom: 16,
-          background: 'var(--accent-bg)', border: '1px solid var(--accent-lo)',
+          background: 'var(--s2)', border: '1px solid var(--border-hi)',
           borderRadius: 'var(--r)',
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', animation: 'pulse 1s infinite' }} />
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.06em' }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--t2)', animation: 'pulse 1s infinite' }} />
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', letterSpacing: '0.06em' }}>
             WAKING SERVER UP···
           </span>
         </div>
       )}
 
       {isError && (
-        <div style={{ padding: '12px 16px', marginBottom: 16, background: 'rgba(255,75,75,0.08)', border: '1px solid rgba(255,75,75,0.2)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 16px', marginBottom: 16, background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--danger)' }}>COULDN'T REACH SERVER</span>
           <button onClick={() => refetch()} className="btn btn-danger" style={{ fontSize: 12 }}>Retry</button>
         </div>
@@ -90,10 +91,10 @@ export default function DashboardPage() {
           [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 52, marginBottom: 12 }} />)
         ) : (
           <>
-            <SignLine figure={String(orders)} words={orders === 1 ? 'order' : 'orders'} color="var(--accent)" />
-            <SignLine figure={takings} words="taken" color="var(--accent)" to="/sales"
+            <SignLine figure={String(orders)} words={orders === 1 ? 'order' : 'orders'} color="var(--t1)" />
+            <SignLine figure={takings} words="taken" color="var(--t1)" to="/sales"
               label={`${takings} taken today — open daily sales`} />
-            <SignLine figure={String(onRail)} words="on the rail" color="var(--pending)" to="/queue"
+            <SignLine figure={String(onRail)} words="on the rail" color="var(--t1)" to="/queue"
               label={`${onRail} ${onRail === 1 ? 'order' : 'orders'} on the rail — open the queue`} />
             <p className="data" style={{ fontSize: 12, color: 'var(--t2)', padding: '10px 0 12px', borderTop: '1px solid var(--border)' }}>
               {stats?.completed_orders ?? 0} done · {stats?.cancelled_orders ?? 0} cancelled
