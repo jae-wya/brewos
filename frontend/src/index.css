@@ -61,12 +61,12 @@
        chalk on slate  the menu, the things she sets rather than reads
        ember  heat and lateness, nothing else; deepens as it gets later
        kraft  the primary button off paper (the cup sleeve, not a flame)
-     Contrast: ink on paper 14.35:1, chalk on slate 10.80:1, ink on kraft
+     Contrast: ink on paper 14.35:1, chalk on slate 12.30:1, ink on kraft
      7.71:1, ink on ember 6.39:1 (the late stamp). Ember-deep is 4.42:1 on
      paper; no text sits on it. */
   --paper:      #EDE4D3;
   --chalk:      #D8D2C6;
-  --slate:      #232019;
+  --slate:      #121412; /* one value in both themes, like paper */
   --ember-deep: #C1340C;
   --kraft:      #C9A27A;
   --on-kraft:   var(--ink);
@@ -122,23 +122,25 @@
   --on-kraft:  var(--paper);
 }
 
-/* The board: chalk on slate, in both themes. The menu and the things she
+/* The board: chalk on slate in a kraft frame. One object, the same in both
+   themes: a chalkboard is dark in daylight too. The menu and the things she
    sets rather than reads. Anything inside [data-board] reads these instead
    of the counter's surfaces, so chips, toggles, fields and buttons follow.
-   Chalk on slate 10.80:1 (8.10 on the darkest plate); secondary chalk 4.68
-   worst; ruling and control lines 3.19 worst; red 4.86 worst; kraft keeps its
-   night value, 6.91 against slate (ink on it 7.71). Slate is 6.70:1 on the
-   day counter and needs no border; at night it is 1.16, and the board's
-   edge is carried by its plates and ruling. */
+   Chalk on slate 12.30:1 (9.46 on the lightest plate); secondary chalk 5.01
+   worst; ruling and control lines 3.00 worst; red 5.68 worst; kraft 7.87
+   against slate (ink on it 7.71). At night slate is 1.02:1 on the counter
+   and the frame (8.05:1) is what separates it; by day slate itself is
+   7.64:1 and the frame (1.03) is only the frame. Drawn inward as an
+   outline, so it takes no space. */
 [data-board] {
   --s1:        var(--slate);
-  --s2:        #2E2B23;
-  --s3:        #39352E;
-  --border:    #878278;
-  --border-hi: #A5A096;
+  --s2:        #1E1F1D;
+  --s3:        #2A2B28;
+  --border:    #75736C;
+  --border-hi: #9D9990;
   --t1:        var(--chalk);
-  --t2:        #A5A096;
-  --t3:        #A5A096;
+  --t2:        #9D9990;
+  --t3:        #9D9990;
   --danger:    #FF7A85;
   --kraft:     #C9A27A;
   --on-kraft:  var(--ink);
@@ -146,6 +148,8 @@
   --cast:      rgba(0,0,0,0.55);
   background:  var(--slate);
   color:       var(--chalk);
+  outline:     3px solid var(--kraft);
+  outline-offset: -3px;
 }
 
 /* ─── Base ─── */

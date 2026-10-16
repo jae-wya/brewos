@@ -32,8 +32,8 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
   // the sticky header and nav (100) drew over it and Add sat against the nav.
   return createPortal(
     <div onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(20,16,12,0.92)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()}
+      style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'color-mix(in srgb, var(--ink) 92%, transparent)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} data-board
         style={{
           width: '100%', maxWidth: 480,
           background: 'var(--s1)',
@@ -50,7 +50,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '14px 16px 12px', borderBottom: '1px solid var(--border)' }}>
           <div>
             <p className="display" style={{ fontSize: 24, color: 'var(--t1)' }}>{item.name.toUpperCase()}</p>
-            <p className="data" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', marginTop: 4 }}>
+            <p className="data" style={{ fontSize: 22, fontWeight: 700, color: 'var(--t1)', marginTop: 4 }}>
               &#8369;{(unit * qty).toLocaleString()}
             </p>
           </div>
