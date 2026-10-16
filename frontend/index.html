@@ -23,6 +23,18 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+
+    <!-- The saved theme, before first paint. useTheme only runs inside the
+         Layout, so without this Login (and any first paint) was always dark.
+         Same key and fallback as useTheme; storage can throw when blocked. -->
+    <script>
+      try {
+        var t = localStorage.getItem('brewos-theme')
+        document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark')
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
