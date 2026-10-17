@@ -172,3 +172,11 @@ signature element of the design. By day its holes are counter-coloured on
 paper, only 1.92:1, which is logically right but quiet. If the torn edge
 disappears on her phone in daylight, the fix is a faint ink rim on each hole,
 not a brighter fill.
+
+**A failed status change can be invisible on her phone.** Status changes are
+optimistic: the order moves lanes on tap, and a failed save puts it back with
+the reason on the chit. On the phone she sees one lane at a time. If she has
+switched lanes before the save fails, the reason is on the lane she left: she
+sees a chit vanish and a count bump, and no reason. That breaks "a visible
+error beats a silently lost order". The fix is an app-level message that
+follows her, not a per-lane one (session 2).
