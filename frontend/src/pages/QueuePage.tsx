@@ -108,7 +108,11 @@ export default function QueuePage() {
       putInQueue(qc, order)
       setFailed(f => ({ ...f, [order.id]: errorMessage(err) }))
     },
-    onSuccess: () => { setTimeout(() => refreshOrders(qc), 260) },
+    // Reconcile with the server, after a failure too (a 409 can mean another
+    // device moved it). Only once the LAST save in a burst settles: an
+    // earlier one's refetch would bring back lanes the server hasn't caught
+    // up on yet. A mutation still counts itself in onSettled, hence 1.
+    onSettled: () => { if (qc.isMutating({ mutationKey: ['advance'] }) === 1) refreshOrders(qc) },
   })
   // A poll that lands mid-save would put the order back where the server
   // still has it, until the next one.

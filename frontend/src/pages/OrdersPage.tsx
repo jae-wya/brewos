@@ -29,7 +29,8 @@ function Row({ order, idx }: { order: Order, idx: number }) {
       return { before: order }
     },
     onError: (_err, _vars, ctx) => { if (ctx) putInOrders(qc, ctx.before) },
-    onSuccess: () => refreshOrders(qc)
+    // After a failure too: a 409 can mean another device already marked it.
+    onSettled: () => { if (qc.isMutating({ mutationKey: ['markPaid'] }) === 1) refreshOrders(qc) },
   })
 
   return (
