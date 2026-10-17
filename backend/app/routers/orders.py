@@ -94,7 +94,7 @@ def unavailable_options_message(option_rows: List[dict], carrying_items: List[di
 
 # --- Routes ---
 @router.post("/")
-async def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_owner)):
+def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_owner)):
     supabase = get_supabase_admin()
     biz = user.business_id
 
@@ -219,7 +219,7 @@ def get_order(supabase, business_id: str, order_id: UUID) -> dict:
 
 
 @router.get("")
-async def get_orders(status: Optional[str] = None, user: CurrentUser = Depends(require_owner)):
+def get_orders(status: Optional[str] = None, user: CurrentUser = Depends(require_owner)):
     supabase = get_supabase_admin()
 
     query = supabase.table("orders")\
@@ -236,7 +236,7 @@ async def get_orders(status: Optional[str] = None, user: CurrentUser = Depends(r
 
 
 @router.patch("/{order_id}/status")
-async def update_order_status(order_id: UUID, body: UpdateOrderStatusRequest,
+def update_order_status(order_id: UUID, body: UpdateOrderStatusRequest,
                               user: CurrentUser = Depends(require_owner)):
     valid = ["pending", "brewing", "ready", "picked_up", "cancelled"]
     if body.status not in valid:
@@ -254,7 +254,7 @@ async def update_order_status(order_id: UUID, body: UpdateOrderStatusRequest,
 
 
 @router.patch("/{order_id}/payment")
-async def mark_paid(order_id: UUID, user: CurrentUser = Depends(require_owner)):
+def mark_paid(order_id: UUID, user: CurrentUser = Depends(require_owner)):
     supabase = get_supabase_admin()
     order = get_order(supabase, user.business_id, order_id)
     res = supabase.table("orders")\

@@ -189,7 +189,7 @@ def set_item_modifiers(sb, business_id: str, item_id: str, wanted: List[str]):
 
 # --- Items ---
 @router.post("/items", status_code=201)
-async def create_item(body: CreateItemRequest, user: CurrentUser = Depends(require_owner)):
+def create_item(body: CreateItemRequest, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     biz = user.business_id
     category = get_live_category(sb, biz, body.category_id)
@@ -220,7 +220,7 @@ async def create_item(body: CreateItemRequest, user: CurrentUser = Depends(requi
 
 
 @router.patch("/items/{item_id}")
-async def update_item(item_id: UUID, body: UpdateItemRequest, user: CurrentUser = Depends(require_owner)):
+def update_item(item_id: UUID, body: UpdateItemRequest, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     biz = user.business_id
     fields = body.model_fields_set
@@ -261,7 +261,7 @@ async def update_item(item_id: UUID, body: UpdateItemRequest, user: CurrentUser 
 
 
 @router.delete("/items/{item_id}")
-async def delete_item(item_id: UUID, user: CurrentUser = Depends(require_owner)):
+def delete_item(item_id: UUID, user: CurrentUser = Depends(require_owner)):
     """Soft delete. Past orders keep their snapshot (item_name, unit_price,
     item_category), and the add-on links are kept so restore brings them back."""
     sb = get_supabase_admin()
@@ -273,7 +273,7 @@ async def delete_item(item_id: UUID, user: CurrentUser = Depends(require_owner))
 
 
 @router.post("/items/{item_id}/restore")
-async def restore_item(item_id: UUID, user: CurrentUser = Depends(require_owner)):
+def restore_item(item_id: UUID, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     biz = user.business_id
     item = get_item(sb, biz, item_id, deleted=True)
@@ -313,7 +313,7 @@ def duplicate_category_message(name: str) -> str:
 
 
 @router.post("/categories", status_code=201)
-async def create_category(body: CategoryRequest, user: CurrentUser = Depends(require_owner)):
+def create_category(body: CategoryRequest, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     try:
         res = sb.table("categories").insert({
@@ -330,7 +330,7 @@ async def create_category(body: CategoryRequest, user: CurrentUser = Depends(req
 
 # Registered before /categories/{category_id} so "order" is never read as an id.
 @router.put("/categories/order")
-async def reorder_categories(body: CategoryOrderRequest, user: CurrentUser = Depends(require_owner)):
+def reorder_categories(body: CategoryOrderRequest, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     biz = user.business_id
     live = sb.table("categories").select("id, sort_order")\
@@ -351,7 +351,7 @@ async def reorder_categories(body: CategoryOrderRequest, user: CurrentUser = Dep
 
 
 @router.patch("/categories/{category_id}")
-async def rename_category(category_id: UUID, body: CategoryRequest, user: CurrentUser = Depends(require_owner)):
+def rename_category(category_id: UUID, body: CategoryRequest, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     cat = get_category(sb, user.business_id, category_id)
     try:
@@ -365,7 +365,7 @@ async def rename_category(category_id: UUID, body: CategoryRequest, user: Curren
 
 
 @router.delete("/categories/{category_id}")
-async def delete_category(category_id: UUID, user: CurrentUser = Depends(require_owner)):
+def delete_category(category_id: UUID, user: CurrentUser = Depends(require_owner)):
     """Soft delete, only when empty. Deleting a category with live items would
     hide them from every screen while they stayed orderable."""
     sb = get_supabase_admin()
@@ -385,7 +385,7 @@ async def delete_category(category_id: UUID, user: CurrentUser = Depends(require
 
 
 @router.post("/categories/{category_id}/restore")
-async def restore_category(category_id: UUID, user: CurrentUser = Depends(require_owner)):
+def restore_category(category_id: UUID, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     biz = user.business_id
     cat = get_category(sb, biz, category_id, deleted=True)

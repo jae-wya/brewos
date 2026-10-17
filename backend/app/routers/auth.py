@@ -31,7 +31,7 @@ def create_token(data: dict) -> str:
 
 # --- Routes ---
 @router.post("/owner-login", response_model=TokenResponse)
-async def owner_login(body: OwnerLoginRequest):
+def owner_login(body: OwnerLoginRequest):
     # Sign in on its own anon-key client. supabase-py swaps a client's
     # Authorization header to the user's token on SIGNED_IN, so signing in on
     # the service-role client would make the staff query below run as

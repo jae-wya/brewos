@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_menu(include_all: bool = False, user: CurrentUser = Depends(require_owner)):
+def get_menu(include_all: bool = False, user: CurrentUser = Depends(require_owner)):
     """Returns full menu with categories, items, and modifiers.
     include_all=true returns all modifier options including unavailable (for management UI).
     include_all=false (default) filters out unavailable options (for order-taking UI).
@@ -64,7 +64,7 @@ def _target(body: Optional[AvailabilityRequest], current: bool) -> bool:
 
 
 @router.patch("/items/{item_id}/toggle")
-async def toggle_item(item_id: str, body: Optional[AvailabilityRequest] = None,
+def toggle_item(item_id: str, body: Optional[AvailabilityRequest] = None,
                       user: CurrentUser = Depends(require_owner)):
     """Set (or, with no body, flip) item availability."""
     supabase = get_supabase_admin()
@@ -91,7 +91,7 @@ async def toggle_item(item_id: str, body: Optional[AvailabilityRequest] = None,
 
 
 @router.patch("/modifier-options/{option_id}/toggle")
-async def toggle_modifier_option(option_id: str, body: Optional[AvailabilityRequest] = None,
+def toggle_modifier_option(option_id: str, body: Optional[AvailabilityRequest] = None,
                                  user: CurrentUser = Depends(require_owner)):
     """Set (or, with no body, flip) modifier option availability (e.g. Espresso Shot, Nacho Sauce)."""
     supabase = get_supabase_admin()

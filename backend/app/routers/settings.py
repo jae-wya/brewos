@@ -90,12 +90,12 @@ def response(settings: dict) -> dict:
 
 
 @router.get("")
-async def get_settings(user: CurrentUser = Depends(require_owner)):
+def get_settings(user: CurrentUser = Depends(require_owner)):
     return response(read_settings(get_supabase_admin(), user.business_id))
 
 
 @router.patch("")
-async def update_settings(body: SettingsUpdate, user: CurrentUser = Depends(require_owner)):
+def update_settings(body: SettingsUpdate, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     settings = dict(read_settings(sb, user.business_id))
     for key in body.model_fields_set:

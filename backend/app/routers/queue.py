@@ -11,7 +11,7 @@ router = APIRouter()
 ACTIVE_STATUSES = ["pending", "brewing", "ready"]
 
 @router.get("")
-async def get_queue(user: CurrentUser = Depends(require_owner)):
+def get_queue(user: CurrentUser = Depends(require_owner)):
     """Returns all active orders for the queue board."""
     supabase = get_supabase_admin()
 
@@ -32,7 +32,7 @@ async def get_queue(user: CurrentUser = Depends(require_owner)):
 
 
 @router.get("/stats")
-async def get_today_stats(user: CurrentUser = Depends(require_owner)):
+def get_today_stats(user: CurrentUser = Depends(require_owner)):
     """Basic today stats for the dashboard."""
     supabase = get_supabase_admin()
 

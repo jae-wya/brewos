@@ -45,7 +45,7 @@ def revenue_of(orders: list) -> Decimal:
 
 
 @router.get("")
-async def get_sales(date: Optional[date] = None, user: CurrentUser = Depends(require_owner)):
+def get_sales(date: Optional[date] = None, user: CurrentUser = Depends(require_owner)):
     """One day's sales. With no date, today in the business's timezone."""
     supabase = get_supabase_admin()
     tz = get_business_tz(supabase, user.business_id)
