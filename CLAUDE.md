@@ -2,20 +2,22 @@
 
 > **Handover checklist — Phase 1 is built (2026-10-14). Left before handing over:**
 >
-> 1. **Hard-delete the test orders**, not soft-delete. Migration 002 counts
->    deleted rows toward numbering, so a soft delete would leave her first
->    real order numbered after the tests; it must be ORD-0001. Deleting from
->    `orders` cascades to `order_items` and `order_item_modifiers` (001).
-> 2. **Verify menu prices against her printed menu**, especially the six
+> 1. **Verify menu prices against her printed menu**, especially the six
 >    Hot/Iced pairs.
-> 3. **Create her owner account** with her own email (see Accounts below).
-> 4. **Delete `C:\Users\Jae\brewos-harness.json`**: it holds the support
+> 2. **Create her owner account** with her own email (see Accounts below).
+> 3. **Delete `C:\Users\Jae\brewos-harness.json`**: it holds the support
 >    account's login, used by the headless test harness.
-> 5. **Write the support-account disclosure** for her, in writing: what the
+> 4. **Write the support-account disclosure** for her, in writing: what the
 >    account can see (everything: menu, orders, sales) and the SQL to
 >    disable it (`is_active = false` on its `staff` row; immediate).
+> 5. **Delete the old Sydney Supabase project** (ap-southeast-2). Production
+>    moved to ap-southeast-1 on 2026-10-17. The old project still holds the
+>    support login with its old, compromised password, which works until
+>    the project is gone.
+> 6. **Delete `C:\Users\Jae\brewos-migration.json`**: it holds the new
+>    project's service key and database password.
 >
-> Remove this note once all five are done.
+> Remove this note once all six are done.
 
 Café operations system for **Glimpse of Del**, a single-operator coffee shop in
 Los Baños, Laguna. Built by Jae (BSCS, LSPU-LB) as a client project and the
