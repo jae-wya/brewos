@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useIsMutating } from '@tanstack/react-query'
 import { ordersApi, errorMessage } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
+import { putInOrders } from '../lib/orderCache'
 import { NavLink } from 'react-router-dom'
 
 const S_BADGE: Record<string, string> = {
@@ -17,8 +18,17 @@ const S_LABEL: Record<string, string> = {
 
 function Row({ order, idx }: { order: Order, idx: number }) {
   const qc = useQueryClient()
+  // Optimistic: PAID ✓ on tap, so there's no window where the button comes
+  // back and invites a second tap. The order as it was rides in the context:
+  // by onError this component has re-rendered, and `order` is the paid one.
   const markPaid = useMutation({
+    mutationKey: ['markPaid'],
     mutationFn: () => ordersApi.markPaid(order.id),
+    onMutate: () => {
+      putInOrders(qc, { ...order, payment_status: 'paid' })
+      return { before: order }
+    },
+    onError: (_err, _vars, ctx) => { if (ctx) putInOrders(qc, ctx.before) },
     onSuccess: () => refreshOrders(qc)
   })
 
@@ -77,8 +87,10 @@ function Row({ order, idx }: { order: Order, idx: number }) {
 
 export default function OrdersPage() {
   const waking = useWakeState()
+  // A poll that lands mid-save would show it unpaid again until the next one.
+  const saving = useIsMutating({ mutationKey: ['markPaid'] }) > 0
   const { data: orders = [], isLoading, isError, refetch } = useQuery({
-    queryKey: keys.orders, queryFn: () => ordersApi.getOrders(), refetchInterval: 15_000, retry: 2,
+    queryKey: keys.orders, queryFn: () => ordersApi.getOrders(), refetchInterval: saving ? false : 15_000, retry: 2,
   })
 
   return (

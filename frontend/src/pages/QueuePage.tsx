@@ -1,41 +1,42 @@
 import { useState, useEffect, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useIsMutating } from '@tanstack/react-query'
 import { queueApi, ordersApi, errorMessage } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
 import { orderHeat } from '../lib/heat'
+import { putInQueue, Lane, Queue } from '../lib/orderCache'
 
-const COLS = [
+const COLS: { key: Lane, label: string, next: Order['status'], action: string, dotClass: string, color: string }[] = [
   { key: 'pending', label: 'Pending', next: 'brewing',   action: 'Start brewing', dotClass: 'dot-pending', color: 'var(--t1)' },
   { key: 'brewing', label: 'Brewing', next: 'ready',     action: 'Mark ready',    dotClass: 'dot-brewing', color: 'var(--brewing)' },
   { key: 'ready',   label: 'Ready',   next: 'picked_up', action: 'Picked up ✓',  dotClass: 'dot-ready',   color: 'var(--ready)'   },
 ]
 
+const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+type Advance = { order: Order, next: Order['status'] }
+
 // One order as her paper chit, hanging on the rail. Heat (lib/heat.ts) is
 // how late it's running — an ember edge that grows as it gets later — and
 // the time is always written too. Recomputed on every refresh (8s); nothing
-// animates while it waits. Advancing it slides it off along the rail toward
-// the next lane.
-function Chit({ order, next, action }: { order: Order, next: string, action: string }) {
-  const qc = useQueryClient()
-  const [leaving, setLeaving] = useState(false)
+// animates while it waits.
+//
+// Advancing it moves the order to the next lane in the cache on tap (see
+// QueuePage); what slides off along the rail is a departing copy, `leaving`,
+// which can't be tapped and is gone when the slide ends.
+function Chit({ order, action, onAdvance, error, leaving, onLeft }: {
+  order: Order, action: string, onAdvance?: () => void, error?: string, leaving?: boolean, onLeft?: () => void,
+}) {
   const heat = orderHeat(order, new Date())
   const time = new Date(order.created_at).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
 
-  const advance = useMutation({
-    mutationFn: () => ordersApi.updateStatus(order.id, next),
-    onMutate: () => setLeaving(true),
-    onSuccess: () => { setTimeout(() => refreshOrders(qc), 260) },
-    // Slides back onto the rail, and says why: watching it slide back isn't
-    // enough to know the drink is still pending on the server.
-    onError: () => setLeaving(false),
-  })
-
   return (
     <article className="chit" data-heat={heat.level || undefined} aria-label={`Order ${order.order_number}`}
-      style={{ marginBottom: 18, animation: leaving ? 'chitLeave 0.26s ease-in forwards' : undefined }}>
+      aria-hidden={leaving || undefined}
+      onAnimationEnd={e => { if (e.animationName === 'chitLeave') onLeft?.() }}
+      style={{ marginBottom: 18, animation: leaving ? 'chitLeave 0.26s ease-in forwards' : undefined, pointerEvents: leaving ? 'none' : undefined }}>
       <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ minWidth: 0 }}>
           <p className="display" style={{ fontSize: 30, color: 'var(--ink)', lineHeight: 0.9 }}>{order.order_number}</p>
@@ -60,21 +61,24 @@ function Chit({ order, next, action }: { order: Order, next: string, action: str
             quantity={item.quantity} name={item.item_name} category={item.item_category}
             modifiers={item.order_item_modifiers.map(m => m.option_name)} notes={item.notes} />
         ))}
-        {advance.isError && (
+        {/* Back on the rail after a failed save, and says why: seeing it
+            reappear isn't enough to know the drink is still pending on the server. */}
+        {error && (
           <p role="alert" style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-danger)', marginTop: 12 }}>
-            Not moved — still {order.status}. {errorMessage(advance.error)}
+            Not moved — still {order.status}. {error}
           </p>
         )}
         <button
-          onClick={() => advance.mutate()}
-          disabled={advance.isPending}
+          onClick={onAdvance}
+          disabled={leaving}
+          tabIndex={leaving ? -1 : undefined}
           // Ink on the paper, not the tungsten gradient: with a rail of
           // chits the gradient was seven loud buttons, drowning out the heat.
           className="btn"
           style={{ width: '100%', marginTop: 12, minHeight: 48, fontSize: 14, background: 'var(--ink)', color: 'var(--paper)', borderRadius: 'var(--r)' }}
           aria-label={`${action} for ${order.order_number}`}
         >
-          {advance.isPending ? '···' : action}
+          {action}
         </button>
       </div>
     </article>
@@ -86,12 +90,48 @@ export default function QueuePage() {
   const waking = useWakeState()
   const [activeTab, setActiveTab] = useState<string | null>(null)
 
-  const { data: queue, isLoading, isError, refetch } = useQuery({
+  // Advancing is optimistic: the order moves lanes in the cache on tap and
+  // the counts follow; the save runs behind it. If it fails, the order goes
+  // back where it was with the reason on it. The mutation lives here, not in
+  // the Chit, because the Chit unmounts the moment its order moves.
+  const [leaving, setLeaving] = useState<Order[]>([])
+  const [failed, setFailed] = useState<Record<string, string>>({})
+  const advance = useMutation({
+    mutationKey: ['advance'],
+    mutationFn: ({ order, next }: Advance) => ordersApi.updateStatus(order.id, next),
+    onMutate: ({ order, next }: Advance) => {
+      setFailed(({ [order.id]: _, ...rest }) => rest)
+      if (!REDUCED_MOTION) setLeaving(l => [...l, order])
+      putInQueue(qc, { ...order, status: next })
+    },
+    onError: (err, { order }) => {
+      putInQueue(qc, order)
+      setFailed(f => ({ ...f, [order.id]: errorMessage(err) }))
+    },
+    onSuccess: () => { setTimeout(() => refreshOrders(qc), 260) },
+  })
+  // A poll that lands mid-save would put the order back where the server
+  // still has it, until the next one.
+  const saving = useIsMutating({ mutationKey: ['advance'] }) > 0
+
+  const { data: queue, isLoading, isError, refetch } = useQuery<Queue>({
     queryKey: keys.queue,
     queryFn: queueApi.getQueue,
-    refetchInterval: 8_000,
+    refetchInterval: saving ? false : 8_000,
     retry: 2,
   })
+
+  // A lane: its orders plus any departing copies still sliding off it.
+  const laneOrders = (lane: Lane) => {
+    const live = (queue?.[lane] ?? []).map(order => ({ order, leaving: false }))
+    const gone = leaving.filter(o => o.status === lane).map(order => ({ order, leaving: true }))
+    return [...live, ...gone].sort((a, b) => new Date(a.order.created_at).getTime() - new Date(b.order.created_at).getTime())
+  }
+  const chit = ({ order, leaving: isLeaving }: { order: Order, leaving: boolean }, col: typeof COLS[number]) => isLeaving
+    ? <Chit key={`leaving-${order.id}`} order={order} action={col.action} leaving
+        onLeft={() => setLeaving(l => l.filter(o => o !== order))} />
+    : <Chit key={order.id} order={order} action={col.action} error={failed[order.id]}
+        onAdvance={() => advance.mutate({ order, next: col.next })} />
 
   const total = COLS.reduce((s, c) => s + (queue?.[c.key]?.length ?? 0), 0)
 
@@ -193,7 +233,7 @@ export default function QueuePage() {
         {/* Active column */}
         {(() => {
           const col = COLS.find(c => c.key === mobileActive)!
-          const orders: Order[] = queue?.[mobileActive] ?? []
+          const orders = laneOrders(col.key)
           return orders.length === 0 ? (
             <div style={{ border: '1px dashed var(--border)', borderRadius: 'var(--r)', padding: '48px', textAlign: 'center' }}>
               <p style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)', letterSpacing: '0.06em' }}>
@@ -201,31 +241,27 @@ export default function QueuePage() {
               </p>
             </div>
           ) : (
-            orders.map((order: Order) => (
-              <Chit key={order.id} order={order} next={col.next} action={col.action} />
-            ))
+            orders.map(o => chit(o, col))
           )
         })()}
       </div>
 
       {/* ── Desktop: 3-col grid ── */}
       <div style={{ display: 'none' }} className="md-grid-3">
-        {COLS.map(({ key, label, next, action, dotClass, color }) => (
+        {COLS.map(col => { const { key, label, dotClass, color } = col; return (
           <div key={key}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 10, marginBottom: 10, borderBottom: `1px solid ${color}` }}>
               <div className={`dot ${dotClass}`} style={{ width: 5, height: 5 }} aria-hidden="true" />
               <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700, color, letterSpacing: '0.1em' }}>{label.toUpperCase()}</span>
               <span className="data" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--t2)' }}>{queue?.[key]?.length ?? 0}</span>
             </div>
-            {(queue?.[key]?.length ?? 0) === 0 ? (
+            {laneOrders(key).length === 0 ? (
               <div style={{ border: '1px dashed var(--border)', borderRadius: 'var(--r)', padding: '28px 8px', textAlign: 'center' }}>
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--t2)' }}>EMPTY</span>
               </div>
-            ) : queue?.[key]?.map((order: Order) => (
-              <Chit key={order.id} order={order} next={next} action={action} />
-            ))}
+            ) : laneOrders(key).map(o => chit(o, col))}
           </div>
-        ))}
+        )})}
       </div>
     </div>
   )

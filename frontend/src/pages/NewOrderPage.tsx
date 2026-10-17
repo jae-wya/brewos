@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -185,6 +185,7 @@ export default function NewOrderPage() {
   // hour or two"). Saved as the order's notes, shown on the queue.
   const [pickup, setPickup] = useState('')
   const [sent, setSent] = useState(false)
+  const sentAt = useRef(0)
   const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
   const { data: settings } = useQuery({ queryKey: keys.settings, queryFn: settingsApi.get, staleTime: 5 * 60_000 })
   const [successOrder, setSuccessOrder] = useState<string | null>(null)
@@ -201,17 +202,22 @@ export default function NewOrderPage() {
         modifiers: i.modifiers.map(m => ({ modifier_option_id: m.modifier_option_id }))
       }))
     }),
+    // The chit she just wrote lifts off toward the queue on tap, while it
+    // saves. ORDER PLACED itself waits for the server: it shows the order
+    // number, which only the server assigns, and an order she believes is
+    // placed must never be one that failed. On failure the chit drops back
+    // onto the counter with the reason under it.
+    onMutate: () => { setSent(true); sentAt.current = Date.now() },
     onSuccess: (data) => {
-      // The chit she just wrote lifts off toward the queue first (skipped,
-      // with no wait, under reduced motion).
-      setSent(true)
+      // Let the lift-off finish if the server beat it (no wait under reduced motion).
       setTimeout(() => {
         setSent(false)
         refreshOrders(qc)
         setShowCart(false)
         setSuccessOrder(data.order_number)
-      }, REDUCED_MOTION ? 0 : 340)
-    }
+      }, REDUCED_MOTION ? 0 : Math.max(0, 340 - (Date.now() - sentAt.current)))
+    },
+    onError: () => setSent(false),
   })
 
   const total = cart.reduce((s, i) => s + i.estimated_unit_price * i.quantity, 0)
