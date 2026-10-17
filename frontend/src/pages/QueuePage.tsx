@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient, useIsMutating } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useIsMutating, useMutationState } from '@tanstack/react-query'
 import { queueApi, ordersApi, errorMessage } from '../lib/api'
 import { useWakeState } from '../hooks/useWakeState'
 import { Order } from '../types'
@@ -26,8 +26,8 @@ type Advance = { order: Order, next: Order['status'] }
 // Advancing it moves the order to the next lane in the cache on tap (see
 // QueuePage); what slides off along the rail is a departing copy, `leaving`,
 // which can't be tapped and is gone when the slide ends.
-function Chit({ order, action, onAdvance, error, leaving, onLeft }: {
-  order: Order, action: string, onAdvance?: () => void, error?: string, leaving?: boolean, onLeft?: () => void,
+function Chit({ order, action, onAdvance, error, saving, leaving, onLeft }: {
+  order: Order, action: string, onAdvance?: () => void, error?: string, saving?: boolean, leaving?: boolean, onLeft?: () => void,
 }) {
   const heat = orderHeat(order, new Date())
   const time = new Date(order.created_at).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
@@ -70,7 +70,8 @@ function Chit({ order, action, onAdvance, error, leaving, onLeft }: {
         )}
         <button
           onClick={onAdvance}
-          disabled={leaving}
+          disabled={leaving || saving}
+          aria-busy={saving || undefined}
           tabIndex={leaving ? -1 : undefined}
           // Ink on the paper, not the tungsten gradient: with a rail of
           // chits the gradient was seven loud buttons, drowning out the heat.
@@ -78,7 +79,7 @@ function Chit({ order, action, onAdvance, error, leaving, onLeft }: {
           style={{ width: '100%', marginTop: 12, minHeight: 48, fontSize: 14, background: 'var(--ink)', color: 'var(--paper)', borderRadius: 'var(--r)' }}
           aria-label={`${action} for ${order.order_number}`}
         >
-          {action}
+          {saving ? '···' : action}
         </button>
       </div>
     </article>
@@ -117,6 +118,13 @@ export default function QueuePage() {
   // A poll that lands mid-save would put the order back where the server
   // still has it, until the next one.
   const saving = useIsMutating({ mutationKey: ['advance'] }) > 0
+  // An order whose move is still saving can't be moved again: it's already
+  // in its new lane with a live button, and a second save could reach the
+  // server first (handlers run in parallel), leaving it a step behind.
+  const savingIds = useMutationState({
+    filters: { mutationKey: ['advance'], status: 'pending' },
+    select: m => (m.state.variables as Advance).order.id,
+  })
 
   const { data: queue, isLoading, isError, refetch } = useQuery<Queue>({
     queryKey: keys.queue,
@@ -135,7 +143,7 @@ export default function QueuePage() {
     ? <Chit key={`leaving-${order.id}`} order={order} action={col.action} leaving
         onLeft={() => setLeaving(l => l.filter(o => o !== order))} />
     : <Chit key={order.id} order={order} action={col.action} error={failed[order.id]}
-        onAdvance={() => advance.mutate({ order, next: col.next })} />
+        saving={savingIds.includes(order.id)} onAdvance={() => advance.mutate({ order, next: col.next })} />
 
   const total = COLS.reduce((s, c) => s + (queue?.[c.key]?.length ?? 0), 0)
 
