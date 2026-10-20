@@ -3,10 +3,10 @@ import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { menuApi, ordersApi, settingsApi, errorMessage } from '../lib/api'
-import { MenuItem, MenuData, CartItem, ModifierOption } from '../types'
+import { MenuItem, MenuData, CartItem, ModifierOption, Size } from '../types'
 import OrderLine from '../components/orders/OrderLine'
 import { keys, refreshOrders } from '../lib/queryKeys'
-import { offeredItems, offeredModifiers } from '../lib/orderScreen'
+import { offeredItems, offeredModifiers, SIZE_NAMES, largeExtra, cartOptionNames, priceLabel } from '../lib/orderScreen'
 import { fillTemplate, peso } from '../lib/composer'
 import { ChevronLeft, X, Check, Minus, Plus, Trash2, Copy } from 'lucide-react'
 import CategoryBar from '../components/CategoryBar'
@@ -22,11 +22,15 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
   // The shared menu has every add-on; offer only the ones that are on.
   const mods = offeredModifiers(item, menuData.modifiers)
   const [sel, setSel] = useState<Record<string, ModifierOption>>({})
+  // An item with a Large must be ordered as M or L; no default, like any
+  // required choice, so she never sells a Medium by not looking.
+  const sized = item.large_price != null
+  const [size, setSize] = useState<Size | null>(null)
   const [qty, setQty] = useState(1)
   const [notes, setNotes] = useState('')
   const extra = Object.values(sel).reduce((s, o) => s + o.price_delta, 0)
-  const unit = item.base_price + extra
-  const canAdd = mods.filter(m => m.is_required).every(m => sel[m.id])
+  const unit = item.base_price + (size === 'L' ? largeExtra(item) : 0) + extra
+  const canAdd = mods.filter(m => m.is_required).every(m => sel[m.id]) && (!sized || size !== null)
 
   // Portalled to <body> at zIndex 110, like the Menu page's ItemSheet: at 60
   // the sticky header and nav (100) drew over it and Add sat against the nav.
@@ -60,6 +64,24 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
         </div>
 
         <div style={{ padding: '14px 16px' }}>
+          {sized && (
+            <div style={{ marginBottom: 18 }}>
+              <p className="label" style={{ marginBottom: 10 }}>
+                Size <span style={{ color: 'var(--danger)' }}>*</span>
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {(['M', 'L'] as const).map(s => (
+                  <button key={s} onClick={() => setSize(cur => cur === s ? null : s)}
+                    aria-pressed={size === s}
+                    className={`chip ${size === s ? 'chip-on' : ''}`}>
+                    {size === s && <Check size={10} aria-hidden="true" style={{ marginRight: 2 }} />}
+                    {SIZE_NAMES[s]}
+                    {s === 'L' && <span style={{ fontWeight: 500, marginLeft: 4 }}>+&#8369;{largeExtra(item)}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {mods.map(mod => (
             <div key={mod.id} style={{ marginBottom: 18 }}>
               <p className="label" style={{ marginBottom: 10 }}>
@@ -79,7 +101,9 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
                       className={`chip ${isSelected ? 'chip-on' : ''}`}>
                       {isSelected && <Check size={10} aria-hidden="true" style={{ marginRight: 2 }} />}
                       {opt.name}
-                      {opt.price_delta > 0 && <span style={{ fontWeight: 500 }}> +&#8369;{opt.price_delta}</span>}
+                      {/* A margin, not a space: .chip is a flex box, so a
+                          leading space in the span collapses ("Shot+₱30"). */}
+                      {opt.price_delta > 0 && <span style={{ fontWeight: 500, marginLeft: 4 }}>+&#8369;{opt.price_delta}</span>}
                     </button>
                   )
                 })}
@@ -111,7 +135,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
                   onAdd({
                     menu_item_id: item.id, item_name: item.name,
                     item_category: menuData.categories.find(c => c.id === item.category_id)?.name ?? null,
-                    estimated_unit_price: unit, quantity: qty, notes,
+                    estimated_unit_price: unit, quantity: qty, notes, size,
                     modifiers: Object.values(sel).map(o => ({
                       modifier_option_id: o.id, option_name: o.name, price_delta: o.price_delta
                     }))
@@ -125,7 +149,7 @@ function ItemModal({ item, menuData, onAdd, onClose }: {
               Add · &#8369;{(unit * qty).toLocaleString()}
             </button>
           </div>
-          {!canAdd && mods.some(m => m.is_required) && (
+          {!canAdd && (sized || mods.some(m => m.is_required)) && (
             <p style={{ fontSize: 12, color: 'var(--t2)', marginTop: 10 }}>
               Pick the options marked * to continue.
             </p>
@@ -199,6 +223,7 @@ export default function NewOrderPage() {
       items: cart.map(i => ({
         menu_item_id: i.menu_item_id, quantity: i.quantity,
         notes: i.notes || null,
+        size: i.size,
         modifiers: i.modifiers.map(m => ({ modifier_option_id: m.modifier_option_id }))
       }))
     }),
@@ -230,7 +255,7 @@ export default function NewOrderPage() {
       quantity: i.quantity, name: i.item_name, category: i.item_category,
       // Name the category only for Hot/Iced twins, where the customer needs it.
       showCategory: (menuData?.items.filter(m => m.name === i.item_name).length ?? 0) > 1,
-      modifiers: i.modifiers.map(m => m.option_name),
+      modifiers: cartOptionNames(i),
       lineTotal: i.estimated_unit_price * i.quantity,
     })),
     total, pickup, name, gcash: settings?.gcash_number ?? '', maya: settings?.maya_number ?? '',
@@ -298,7 +323,7 @@ export default function NewOrderPage() {
               aria-label={`${item.name}`}
               style={{ padding: '14px', textAlign: 'left', animation: `childEnter 0.3s ${idx * 30}ms both` }}>
               <p className="display" style={{ fontSize: 22, color: 'var(--t1)', lineHeight: 1, letterSpacing: '0.02em', marginBottom: 8 }}>{item.name}</p>
-              <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)' }}>&#8369;{item.base_price}</p>
+              <p className="data" style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)' }}>{priceLabel(item)}</p>
             </button>
           ))}
           {!visible.length && (
@@ -364,7 +389,7 @@ export default function NewOrderPage() {
                 {cart.map((item, i) => (
                   <OrderLine key={i} variant="chit"
                     quantity={item.quantity} name={item.item_name} category={null}
-                    modifiers={[...(item.item_category ? [item.item_category] : []), ...item.modifiers.map(m => m.option_name)]} notes={item.notes || null}
+                    modifiers={[...(item.item_category ? [item.item_category] : []), ...cartOptionNames(item)]} notes={item.notes || null}
                     trailing={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, alignSelf: 'center' }}>
                       <span className="data" style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>

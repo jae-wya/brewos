@@ -1,3 +1,5 @@
+export type Size = 'M' | 'L'
+
 export interface Business {
   id: string
   name: string
@@ -38,6 +40,8 @@ export interface MenuItem {
   name: string
   description: string | null
   base_price: number
+  // null = one size. Set = base_price is the Medium, this is the Large.
+  large_price: number | null
   image_url: string | null
   is_available: boolean
   sort_order: number
@@ -98,6 +102,8 @@ export interface CartItem {
   estimated_unit_price: number
   quantity: number
   notes: string
+  // Chosen for an item with a large_price; null for a one-size item.
+  size: Size | null
   modifiers: {
     modifier_option_id: string
     option_name: string

@@ -92,6 +92,7 @@ export const menuApi = {
 export interface ItemFields {
   name: string
   base_price: string
+  large_price: string | null  // null = one size only
   category_id: string
   modifier_ids: string[]
 }

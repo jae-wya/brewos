@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Literal, Optional, List
 from app.database import get_supabase_admin
 from app.security import CurrentUser, require_owner
 
@@ -25,6 +25,9 @@ class OrderItemRequest(BaseModel):
     quantity: int = Field(default=1, ge=1)
     notes: Optional[str] = None
     modifiers: List[ModifierSelection] = []
+    # Required for an item with a large_price, absent for one that comes in
+    # one size. The Large's price comes from the item, never from here.
+    size: Optional[Literal["M", "L"]] = None
 
 class CreateOrderRequest(BaseModel):
     # No business_id: it comes from the token. Unknown fields are ignored, so
@@ -92,6 +95,31 @@ def unavailable_options_message(option_rows: List[dict], carrying_items: List[di
     return f"{options} are turned off right now. Turn them back on, or remove {items} from the cart."
 
 
+def option_not_offered_message(option_rows: List[dict], menu_item: dict) -> str:
+    """For add-ons whose group she unlinked from (or deleted for) an item
+    since it went into the cart."""
+    options = join_names([row["name"] for row in option_rows])
+    verb = "is" if len(option_rows) == 1 else "are"
+    return f"{options} {verb} no longer offered on {item_label(menu_item)}. Remove it from the cart and add it again."
+
+
+def size_changed_message(menu_item: dict) -> str:
+    """For an item she gave, or took away, a Large price since it went into
+    the cart. The cart's size choice no longer fits the item."""
+    sizes = "Medium and Large" if menu_item["large_price"] is not None else "one size only"
+    return f"{item_label(menu_item)} now comes in {sizes}. Remove it from the cart and add it again."
+
+
+# The size, snapshotted as an order_item_modifiers row exactly as the Size
+# add-on wrote it before migration 006, so past and new orders read the same.
+# No modifier_option_id: the size isn't an add-on any more.
+def size_row(menu_item: dict, size: str) -> dict:
+    if size == "L":
+        delta = round(float(menu_item["large_price"]) - float(menu_item["base_price"]), 2)
+        return {"name": "Large (L)", "price_delta": delta}
+    return {"name": "Medium (M)", "price_delta": 0}
+
+
 # --- Routes ---
 @router.post("/")
 def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_owner)):
@@ -102,13 +130,14 @@ def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_o
         raise HTTPException(status_code=400, detail="Order has no items")
 
     # Look up live prices — the backend is the single source of truth.
-    # unit_price is the item's base price; add-ons are stored separately as
-    # price_delta, so line_total = (unit_price + sum(price_delta)) * quantity.
+    # unit_price is the item's base price; add-ons and a Large are stored
+    # separately as price_delta, so
+    # line_total = (unit_price + sum(price_delta)) * quantity.
     item_ids = list({i.menu_item_id for i in body.items})
     option_ids = list({m.modifier_option_id for i in body.items for m in i.modifiers})
 
     items_res = supabase.table("menu_items")\
-        .select("id, name, base_price, is_available, categories(name)")\
+        .select("id, name, base_price, large_price, is_available, categories(name), menu_item_modifiers(modifier_id)")\
         .eq("business_id", biz)\
         .in_("id", item_ids)\
         .is_("deleted_at", None)\
@@ -118,7 +147,7 @@ def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_o
     options = {}
     if option_ids:
         options_res = supabase.table("modifier_options")\
-            .select("id, name, price_delta, is_available")\
+            .select("id, name, price_delta, is_available, modifier_id, modifiers(deleted_at)")\
             .eq("business_id", biz)\
             .in_("id", option_ids)\
             .execute()
@@ -132,18 +161,35 @@ def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_o
         raise HTTPException(status_code=409, detail=unavailable_items_message(turned_off))
     if any(o not in options for o in option_ids):
         raise HTTPException(status_code=409, detail="An add-on in the cart is no longer on the menu. Remove that item and add it again.")
+    # Each add-on must belong to a live group linked to THAT item, not just to
+    # her business: an Espresso Shot can't be ordered on Beef Nachos.
+    for item in body.items:
+        menu_item = menu_items[item.menu_item_id]
+        linked = {link["modifier_id"] for link in menu_item["menu_item_modifiers"]}
+        not_offered = [options[m.modifier_option_id] for m in item.modifiers
+                       if options[m.modifier_option_id]["modifier_id"] not in linked
+                       or (options[m.modifier_option_id].get("modifiers") or {}).get("deleted_at") is not None]
+        if not_offered:
+            raise HTTPException(status_code=409, detail=option_not_offered_message(not_offered, menu_item))
     options_off = [row for row in options.values() if not row["is_available"]]
     if options_off:
         off_ids = {row["id"] for row in options_off}
         carrying = [menu_items[i.menu_item_id] for i in body.items
                     if any(m.modifier_option_id in off_ids for m in i.modifiers)]
         raise HTTPException(status_code=409, detail=unavailable_options_message(options_off, carrying))
+    # A sized item needs M or L; a one-size item takes neither.
+    for item in body.items:
+        menu_item = menu_items[item.menu_item_id]
+        if (menu_item["large_price"] is not None) != (item.size is not None):
+            raise HTTPException(status_code=409, detail=size_changed_message(menu_item))
 
     lines = []
     for item in body.items:
         menu_item = menu_items[item.menu_item_id]
         unit_price = float(menu_item["base_price"])
         mods = [options[m.modifier_option_id] for m in item.modifiers]
+        if item.size:
+            mods.insert(0, size_row(menu_item, item.size))
         line_total = (unit_price + sum(float(o["price_delta"]) for o in mods)) * item.quantity
         lines.append((item, menu_item, unit_price, mods, line_total))
 
@@ -198,7 +244,7 @@ def create_order(body: CreateOrderRequest, user: CurrentUser = Depends(require_o
                 {
                     "business_id": biz,
                     "order_item_id": item_id,
-                    "modifier_option_id": o["id"],
+                    "modifier_option_id": o.get("id"),
                     "option_name": o["name"],
                     "price_delta": o["price_delta"]
                 }

@@ -5,7 +5,7 @@ import { putItem, removeItem, putOptimistic, settleItem, nextSortOrder, placehol
 import { MenuData, MenuItem } from '../types'
 
 const item = (id: string, category_id: string, sort_order: number, extra: Partial<MenuItem> = {}): MenuItem => ({
-  id, business_id: 'biz', category_id, name: id, description: null, base_price: 100,
+  id, business_id: 'biz', category_id, name: id, description: null, base_price: 100, large_price: null,
   image_url: null, is_available: true, sort_order, menu_item_modifiers: [], ...extra,
 })
 

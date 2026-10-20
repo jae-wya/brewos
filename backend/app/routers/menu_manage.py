@@ -61,6 +61,8 @@ class CreateItemRequest(BaseModel):
     name: str
     category_id: UUID
     base_price: Decimal
+    # None = one size only. Set = base_price is the Medium (migration 006).
+    large_price: Optional[Decimal] = None
     modifier_ids: List[UUID] = []
 
     @field_validator("name", mode="before")
@@ -73,11 +75,18 @@ class CreateItemRequest(BaseModel):
     def validate_price(cls, v):
         return clean_price(v)
 
+    @field_validator("large_price", mode="before")
+    @classmethod
+    def validate_large_price(cls, v):
+        return None if v is None else clean_price(v, "Large price")
+
 
 class UpdateItemRequest(BaseModel):
     name: Optional[str] = None
     category_id: Optional[UUID] = None
     base_price: Optional[Decimal] = None
+    # When present, REPLACES the Large price; null removes it (one size only).
+    large_price: Optional[Decimal] = None
     # When present, REPLACES the item's add-on groups (empty list = none).
     modifier_ids: Optional[List[UUID]] = None
 
@@ -90,6 +99,11 @@ class UpdateItemRequest(BaseModel):
     @classmethod
     def validate_price(cls, v):
         return None if v is None else clean_price(v)
+
+    @field_validator("large_price", mode="before")
+    @classmethod
+    def validate_large_price(cls, v):
+        return None if v is None else clean_price(v, "Large price")
 
 
 class CategoryRequest(BaseModel):
@@ -122,6 +136,26 @@ def duplicate_item_message(category_name: str, item_name: str) -> str:
     # Item first, category second: reads right for plural category names too
     # ("There's already a Fries in Snacks.").
     return f"There's already {a_or_an(item_name)} {item_name} in {category_name}."
+
+
+def peso(amount) -> str:
+    s = f"{Decimal(str(amount)):,.2f}"
+    return "₱" + (s[:-3] if s.endswith(".00") else s)
+
+
+def check_large_price(base_price, large_price):
+    """Said in a sentence before menu_items_large_price_check (migration 006)
+    would refuse it. Also catches raising a Medium past its Large."""
+    if large_price is not None and Decimal(str(large_price)) <= Decimal(str(base_price)):
+        raise HTTPException(status_code=422, detail=large_price_message(base_price, large_price))
+
+
+def large_price_message(base_price, large_price) -> str:
+    return f"Large ({peso(large_price)}) must be more than the Medium ({peso(base_price)})."
+
+
+def is_large_price_violation(e: APIError) -> bool:
+    return e.code == "23514" and "menu_items_large_price_check" in (e.message or "")
 
 
 def get_live_category(sb, business_id: str, category_id) -> dict:
@@ -192,6 +226,7 @@ def set_item_modifiers(sb, business_id: str, item_id: str, wanted: List[str]):
 def create_item(body: CreateItemRequest, user: CurrentUser = Depends(require_owner)):
     sb = get_supabase_admin()
     biz = user.business_id
+    check_large_price(body.base_price, body.large_price)
     category = get_live_category(sb, biz, body.category_id)
     modifier_ids = check_modifiers(sb, biz, body.modifier_ids)
 
@@ -201,11 +236,14 @@ def create_item(body: CreateItemRequest, user: CurrentUser = Depends(require_own
             "category_id": category["id"],
             "name": body.name,
             "base_price": float(body.base_price),
+            "large_price": None if body.large_price is None else float(body.large_price),
             "sort_order": next_sort_order(sb, "menu_items", biz, category["id"]),
         }).execute()
     except APIError as e:
         if is_unique_violation(e, "menu_items_biz_cat_name_uq"):
             raise HTTPException(status_code=409, detail=duplicate_item_message(category["name"], body.name))
+        if is_large_price_violation(e):
+            raise HTTPException(status_code=422, detail=large_price_message(body.base_price, body.large_price))
         raise
 
     item_id = res.data[0]["id"]
@@ -234,6 +272,13 @@ def update_item(item_id: UUID, body: UpdateItemRequest, user: CurrentUser = Depe
         changes["name"] = body.name
     if "base_price" in fields and body.base_price is not None:
         changes["base_price"] = float(body.base_price)
+    if "large_price" in fields:
+        changes["large_price"] = None if body.large_price is None else float(body.large_price)
+    # Against what the item will be after this edit: a new Medium alone can
+    # pass its existing Large.
+    base_after = changes.get("base_price", item["base_price"])
+    large_after = changes.get("large_price", item["large_price"])
+    check_large_price(base_after, large_after)
 
     category_id = item["category_id"]
     if "category_id" in fields and body.category_id is not None and str(body.category_id) != category_id:
@@ -252,6 +297,9 @@ def update_item(item_id: UUID, body: UpdateItemRequest, user: CurrentUser = Depe
             if is_unique_violation(e, "menu_items_biz_cat_name_uq"):
                 cat = get_live_category(sb, biz, category_id)
                 raise HTTPException(status_code=409, detail=duplicate_item_message(cat["name"], changes.get("name", item["name"])))
+            if is_large_price_violation(e):
+                # check_large_price passed, so the item changed since we read it.
+                raise HTTPException(status_code=422, detail="Large must be more than the Medium. Pull down to refresh, then try again.")
             raise
 
     if modifier_ids is not None:

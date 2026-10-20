@@ -6,6 +6,8 @@ import { menuApi, errorMessage, ItemFields } from '../lib/api'
 import { keys } from '../lib/queryKeys'
 import { putItem, putOptimistic, removeItem, settleItem, nextSortOrder, placeholderId, isPlaceholder } from '../lib/menuCache'
 import { shownAvailability } from '../lib/availabilityWrites'
+import { priceLabel } from '../lib/orderScreen'
+import { peso } from '../lib/composer'
 import { useAvailabilityToggle } from '../hooks/useAvailabilityToggle'
 import { useNavHeight } from '../hooks/useNavHeight'
 import ItemSheet from '../components/menu/ItemSheet'
@@ -131,6 +133,7 @@ function MenuItemRow({ item, groupNames, onOpen }: {
   const [priceError, setPriceError] = useState<string | null>(null)
   // A new item still waiting for its real id: nothing here may send that id.
   const placeholder = isPlaceholder(item)
+  const sized = item.large_price != null
 
   const openEditor = () => { setPriceDraft(String(item.base_price)); setPriceError(null); setEditing(true) }
   const closeEditor = () => { setEditing(false); setPriceError(null) }
@@ -181,8 +184,12 @@ function MenuItemRow({ item, groupNames, onOpen }: {
             </span>
           )}
         </button>
-        <button onClick={() => { if (!editing) openEditor() }} disabled={placeholder}
-          aria-label={`Change price of ${item.name}, now ₱${item.base_price}`} aria-expanded={editing}
+        {/* With a Large, the price opens the item sheet, where both prices
+            are: the inline field edits one number, and "135 / 160" doesn't
+            say which. */}
+        <button onClick={() => { if (sized) onOpen(item); else if (!editing) openEditor() }} disabled={placeholder}
+          aria-label={`Change price of ${item.name}, now ${sized ? `${peso(item.base_price)} Medium, ${peso(item.large_price!)} Large` : peso(item.base_price)}`}
+          aria-expanded={sized ? undefined : editing}
           className="data"
           style={{
             minWidth: 64, minHeight: 'var(--touch)', padding: '0 8px', marginLeft: 8,
@@ -191,7 +198,7 @@ function MenuItemRow({ item, groupNames, onOpen }: {
             color: 'var(--t1)',
             textDecoration: editing ? 'underline' : 'none',
           }}>
-          &#8369;{item.base_price}
+          {priceLabel(item)}
         </button>
         <button
           onClick={() => tog.set(on, !on)}
@@ -294,6 +301,7 @@ export default function MenuPage() {
       id: item?.id ?? placeholderId(),
       name: f.name.split(/\s+/).filter(Boolean).join(' '), // the server tidies spaces the same way
       base_price: Number(f.base_price),
+      large_price: f.large_price ? Number(f.large_price) : null,
       category_id: f.category_id,
       menu_item_modifiers: f.modifier_ids.map(modifier_id => ({ modifier_id })),
       sort_order: moved ? nextSortOrder(qc, f.category_id) : item.sort_order,

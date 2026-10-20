@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { ItemFields } from '../../lib/api'
+import { peso } from '../../lib/composer'
 import { MenuData, MenuItem } from '../../types'
 
 // Add-on groups a new item starts with: the ones most items in that category
@@ -37,6 +38,8 @@ export default function ItemSheet({ menu, item, categoryId, draft, error: initia
 }) {
   const [name, setName] = useState(draft?.name ?? item?.name ?? '')
   const [price, setPrice] = useState(draft?.base_price ?? (item ? String(item.base_price) : ''))
+  // Empty = one size only.
+  const [large, setLarge] = useState(draft ? (draft.large_price ?? '') : (item?.large_price != null ? String(item.large_price) : ''))
   const [catId, setCatId] = useState(draft?.category_id ?? item?.category_id ?? categoryId)
   const [modIds, setModIds] = useState<string[]>(draft?.modifier_ids ??
     (item ? item.menu_item_modifiers.map(m => m.modifier_id) : categoryModifiers(menu, categoryId)))
@@ -48,7 +51,11 @@ export default function ItemSheet({ menu, item, categoryId, draft, error: initia
   const submit = () => {
     if (!name.trim()) return setError("Name can't be empty.")
     if (!price.trim() || !Number.isFinite(Number(price.trim()))) return setError('Price must be a number.')
-    onSave({ name, base_price: price.trim(), category_id: catId, modifier_ids: modIds })
+    const largePrice = large.trim()
+    if (largePrice && !Number.isFinite(Number(largePrice))) return setError('Large price must be a number.')
+    if (largePrice && Number(largePrice) <= Number(price.trim()))
+      return setError(`Large (${peso(Number(largePrice))}) must be more than the Medium (${peso(Number(price.trim()))}).`)
+    onSave({ name, base_price: price.trim(), large_price: largePrice || null, category_id: catId, modifier_ids: modIds })
   }
 
   const pickCategory = (id: string) => {
@@ -99,12 +106,29 @@ export default function ItemSheet({ menu, item, categoryId, draft, error: initia
               placeholder="Spanish Latte" className="field" />
           </div>
 
+          {/* Two prices side by side, the way her printed menu lists them
+              ("135 / 160"). They're independent: changing one never moves
+              the other. */}
           <div style={{ marginBottom: 18 }}>
-            <label htmlFor="item-price" className="label" style={{ display: 'block', marginBottom: 10 }}>Price (&#8369;)</label>
-            <input id="item-price" type="text" inputMode="decimal" value={price} onChange={e => setPrice(e.target.value)}
-              autoComplete="off" enterKeyHint="done" placeholder="0"
-              onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur(); submit() } }}
-              className="field data" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label htmlFor="item-price" className="label" style={{ display: 'block', marginBottom: 10 }}>Price (&#8369;)</label>
+                <input id="item-price" type="text" inputMode="decimal" value={price} onChange={e => setPrice(e.target.value)}
+                  autoComplete="off" enterKeyHint="next" placeholder="0"
+                  onKeyDown={e => { if (e.key === 'Enter') document.getElementById('item-large')?.focus() }}
+                  className="field data" />
+              </div>
+              <div>
+                <label htmlFor="item-large" className="label" style={{ display: 'block', marginBottom: 10 }}>Large (&#8369;)</label>
+                <input id="item-large" type="text" inputMode="decimal" value={large} onChange={e => setLarge(e.target.value)}
+                  autoComplete="off" enterKeyHint="done" placeholder="None" aria-describedby="item-large-hint"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur(); submit() } }}
+                  className="field data" />
+              </div>
+            </div>
+            <p id="item-large-hint" style={{ fontSize: 12, color: 'var(--t2)', marginTop: 8 }}>
+              {large.trim() ? 'Price is the Medium.' : 'Empty if it comes in one size.'}
+            </p>
           </div>
 
           <div style={{ marginBottom: 18 }}>
