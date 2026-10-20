@@ -4,20 +4,23 @@
 >
 > 1. **Verify menu prices against her printed menu**, especially the six
 >    Hot/Iced pairs.
-> 2. **Create her owner account** with her own email (see Accounts below).
+> 2. ~~**Create her owner account**~~ Done 2026-10-20: Regine,
+>    `gwenpangga@gmail.com`, owner, active.
 > 3. **Delete `C:\Users\Jae\brewos-harness.json`**: it holds the support
 >    account's login, used by the headless test harness.
 > 4. **Write the support-account disclosure** for her, in writing: what the
 >    account can see (everything: menu, orders, sales) and the SQL to
 >    disable it (`is_active = false` on its `staff` row; immediate).
-> 5. **Delete the old Sydney Supabase project** (ap-southeast-2). Production
->    moved to ap-southeast-1 on 2026-10-17. The old project still holds the
->    support login with its old, compromised password, which works until
->    the project is gone.
-> 6. **Delete `C:\Users\Jae\brewos-migration.json`**: it holds the new
->    project's service key and database password.
+> 5. **Delete the old Sydney Supabase project** (ap-southeast-2) on
+>    **Saturday 24 Oct**. Paused now. Production moved to ap-southeast-1 on
+>    2026-10-17. The old project still holds the support login with its old,
+>    compromised password; paused, it can't be logged into, but it isn't
+>    gone until deleted.
+> 6. ~~**Delete `C:\Users\Jae\brewos-migration.json`**~~ Done.
+> 7. **Delete `C:\Users\Jae\brewos-handover.txt` straight after she changes
+>    her password at training.** It holds her temporary password.
 >
-> Remove this note once all six are done.
+> Remove this note once all seven are done.
 
 Café operations system for **Glimpse of Del**, a single-operator coffee shop in
 Los Baños, Laguna. Built by Jae (BSCS, LSPU-LB) as a client project and the
