@@ -1,0 +1,3 @@
+# Tests only; not installed on Render. Run from backend/: python -m pytest
+-r requirements.txt
+pytest==8.3.4

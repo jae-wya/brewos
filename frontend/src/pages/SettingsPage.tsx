@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { ChevronLeft, LogOut } from 'lucide-react'
-import { settingsApi, errorMessage } from '../lib/api'
+import { settingsApi, authApi, errorMessage } from '../lib/api'
+import { newPasswordProblem, PASSWORD_MIN } from '../lib/password'
 import { keys } from '../lib/queryKeys'
 import { clearSession } from '../lib/session'
 import { fillTemplate, unknownPlaceholders, PLACEHOLDERS } from '../lib/composer'
@@ -23,6 +24,57 @@ const HELP: Record<typeof PLACEHOLDERS[number], string> = {
 const SAMPLE = {
   lines: [{ quantity: 1, name: 'Spanish Latte', category: 'Iced Coffee', showCategory: true, modifiers: ['Medium (M)'], lineTotal: 120 }],
   total: 120, pickup: 'in an hour or two', name: 'Ana',
+}
+
+// Her own password. Jae gives her a temporary one at handover and she
+// changes it here, so he never knows the real one.
+function PasswordSection() {
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [again, setAgain] = useState('')
+  const [status, setStatus] = useState<{ saving?: boolean, changed?: boolean, error?: string }>({})
+
+  const edit = (set: (v: string) => void) => (e: ChangeEvent<HTMLInputElement>) => { set(e.target.value); setStatus({}) }
+
+  const change = async () => {
+    const problem = newPasswordProblem(current, next, again)
+    if (problem) return setStatus({ error: problem })
+    setStatus({ saving: true })
+    try {
+      await authApi.changePassword(current, next)
+      setCurrent(''); setNext(''); setAgain('')
+      setStatus({ changed: true })
+    } catch (err) {
+      setStatus({ error: errorMessage(err) })
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 40, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+      <h2 className="display" style={{ fontSize: 24, color: 'var(--t1)', marginBottom: 12 }}>PASSWORD</h2>
+      <label htmlFor="pw-current" className="label" style={{ display: 'block', marginBottom: 8 }}>Current password</label>
+      <input id="pw-current" type="password" autoComplete="current-password" value={current} onChange={edit(setCurrent)}
+        className="field" style={{ marginBottom: 14 }} />
+      <label htmlFor="pw-new" className="label" style={{ display: 'block', marginBottom: 8 }}>New password</label>
+      <input id="pw-new" type="password" autoComplete="new-password" value={next} onChange={edit(setNext)}
+        aria-describedby="pw-hint" className="field" style={{ marginBottom: 6 }} />
+      <p id="pw-hint" style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 14 }}>At least {PASSWORD_MIN} characters.</p>
+      <label htmlFor="pw-again" className="label" style={{ display: 'block', marginBottom: 8 }}>New password again</label>
+      <input id="pw-again" type="password" autoComplete="new-password" value={again} onChange={edit(setAgain)}
+        enterKeyHint="done" onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur(); change() } }}
+        className="field" style={{ marginBottom: 14 }} />
+      {status.error && <p role="alert" style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 10 }}>{status.error}</p>}
+      {status.changed && (
+        <p role="status" style={{ fontSize: 12, color: 'var(--t1)', marginBottom: 10 }}>
+          Password changed. Use the new one next time you log in.
+        </p>
+      )}
+      <button onClick={change} disabled={status.saving || !current || !next || !again}
+        className="btn btn-ghost" style={{ width: '100%', minHeight: 'var(--touch)', fontSize: 14 }}>
+        {status.saving ? 'Changing…' : 'Change password'}
+      </button>
+    </div>
+  )
 }
 
 export default function SettingsPage() {
@@ -155,6 +207,9 @@ export default function SettingsPage() {
           </div>
         </>
       )}
+
+      {/* Shown even if settings fail to load: it doesn't depend on them. */}
+      <PasswordSection />
 
       {/* Shown even if settings fail to load: logging out must always work. */}
       <div style={{ marginTop: 40, paddingTop: 16, borderTop: '1px solid var(--border)' }}>

@@ -66,6 +66,9 @@ export function errorMessage(error: any, fallback = "Something went wrong. Pleas
 export const authApi = {
   ownerLogin: (email: string, password: string) =>
     api.post('/auth/owner-login', { email, password }).then(r => r.data),
+  // Her own password, from Settings. Only the server knows whose it is.
+  changePassword: (current_password: string, new_password: string) =>
+    api.post('/auth/change-password', { current_password, new_password }).then(r => r.data),
 }
 
 export const menuApi = {

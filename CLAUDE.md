@@ -196,3 +196,13 @@ availability switch; the old Size add-on had one. Add a `large_available`
 boolean if she turns out to need it. Until then she turns the whole drink
 off. (To ask at training: has she ever run out of one cup size but not the
 other?)
+
+**No "forgot password" flow.** If she forgets her password, she has to
+message Jae, which breaks "anything that forces her to ask for help is a
+bug". It needs SMTP (Supabase's built-in email won't reach her) plus a reset
+page. Until then, Jae sets a new temporary password from the Supabase
+dashboard and she changes it in Settings → Password.
+
+**Changing the password doesn't sign out other devices**: the app's 30-day
+token is independent of it. If her phone is ever lost, the fix is
+deactivating the account or rotating `JWT_SECRET`, not changing the password.
