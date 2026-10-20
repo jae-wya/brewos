@@ -1,31 +1,36 @@
 -- ============================================================
--- BrewOS — the whole database schema, as it stands. REBUILD FROM THIS.
+-- BrewOS — BASELINE: the full database schema as of migration 005.
 -- Dumped 2026-10-17 from the original Supabase project (ap-southeast-2)
--- and loaded into the current one (ap-southeast-1); the two dumps match
--- line for line apart from the server version.
+-- and applied the same day to the current one (ap-southeast-1); the two
+-- dumps match line for line apart from the server version.
 -- ============================================================
 --
--- TWO FILES, TWO JOBS. The overlap is deliberate; don't "fix" it.
+-- TO REBUILD: on an empty Supabase project, run this file, then every
+-- migration above 005 (006, 007, ...) in numeric order, then load the data.
 --
---   schema.sql (this file)  What the database IS. The only way to build it
---                           from the repo: the original tables were created
---                           in the Supabase dashboard and never committed.
+--   schema.sql (this file)  The database as of 005. The starting point: the
+--                           original tables were created in the Supabase
+--                           dashboard and never committed, so 001–005 can't
+--                           build it.
 --
---   migrations/001–005      What CHANGED, and WHY. The record of each change
---                           and its reasoning. They ALTER tables that already
---                           exist, so they can't build a database on their
---                           own, and must not be run on top of this file:
---                           everything they did is already in it.
+--   migrations/001–005      Already contained in this file. Kept as the
+--                           record of what changed and why. Never run them
+--                           on top of it.
 --
--- A future schema change: write migration 006 as usual (the why), apply it,
--- then regenerate this file from the live project (the what):
+--   migrations/006 and up   Apply on top of this file, in numeric order.
+--                           Each schema change is a new migration; this
+--                           file does not change.
+--
+-- NEVER HAND-EDIT THIS FILE, and never regenerate it as part of an ordinary
+-- change. Regenerating it is a deliberate re-baselining: dump the live
+-- project after migration N, rewrite this header to say "as of N", and from
+-- then on only migrations above N apply on top. The dump command:
 --
 --   pg_dump --schema-only --schema=public --no-owner
 --
--- and drop the same lines this one drops (below).
+-- then drop the same lines this one drops (below).
 --
--- TO REBUILD: on an empty Supabase project, run this file, then load the
--- data. It creates the public schema's tables, functions, triggers, RLS
+-- This file creates the public schema's tables, functions, triggers, RLS
 -- policies and grants. Differences from a raw pg_dump, so it runs as the
 -- `postgres` role and in the SQL editor:
 --   - no CREATE SCHEMA public (Supabase creates it);

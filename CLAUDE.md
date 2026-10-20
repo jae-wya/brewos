@@ -182,3 +182,17 @@ switched lanes before the save fails, the reason is on the lane she left: she
 sees a chit vanish and a count bump, and no reason. That breaks "a visible
 error beats a silently lost order". The fix is an app-level message that
 follows her, not a per-lane one (session 2).
+
+**A rebuild cannot recreate her menu.** The repo has no menu seed.
+`supabase/schema.sql` plus the migrations rebuild the schema only; her 83
+items exist only because they were dumped out of the old Supabase project.
+When that seed is written, `large_price` belongs in it as ordinary item
+data, not in a migration. (Her 23 Large prices were set on production by a
+one-off data script, `supabase/data/2026-10-19_large_prices.sql`, which is
+not part of a rebuild.)
+
+**A Large can't be turned off on its own.** `large_price` has no
+availability switch; the old Size add-on had one. Add a `large_available`
+boolean if she turns out to need it. Until then she turns the whole drink
+off. (To ask at training: has she ever run out of one cup size but not the
+other?)
